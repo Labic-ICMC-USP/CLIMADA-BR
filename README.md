@@ -1,6 +1,6 @@
 # CLIMADA-BR
 
-Climada-BR is a project of LABIC (Laboratory of Computational Intelligence from USP São Carlos), that seeks to improve hazard assesment in Brazil using LLM's (Large Language Models) for extracting event data from auternative sources. This repository is a fork from the original [CLIMADA](https://github.com/CLIMADA-project/climada_python) which stands for CLIMate ADAptation and is a probabilistic natural catastrophe impact model, that also calculates averted damage (benefit) thanks to adaptation measures of any kind (from grey to green infrastructure, behavioural, etc.). For the installation follow [Climada's Install Guide Advanced Instructions](https://climada-python.readthedocs.io/en/latest/guide/install.html#advanced-instructions) but remember to clone this repository instead of the original.
+Climada-BR is a project of LABIC (Laboratory of Computational Intelligence from USP São Carlos), that seeks to improve hazard assesment in Brazil using LLM's (Large Language Models) for extracting event data from auternative sources. This repository is a fork from the original [CLIMADA](https://github.com/CLIMADA-project/climada_python) which stands for CLIMate ADAptation and is a probabilistic natural catastrophe impact model, that also calculates averted damage (benefit) thanks to adaptation measures of any kind (from grey to green infrastructure, behavioural, etc.). The installation Guide is at the end of the page.
 
 ## Introduction
 
@@ -28,7 +28,7 @@ First, we will conduct rigorous testing and validation of the CLIMADA-BR model, 
 
 Once validated, the CLIMADA-BR framework will be disseminated through workshops, training sessions, and online platforms, targeting decision-makers, researchers, and the public. An open-source release of the model will be pivotal to encourage broader adoption and continuous improvement. To maximize the project's impact, we will establish partnerships with local communities, leveraging their knowledge and contributing to the model's enrichment.
 
-## References
+### References
 
 [1] KROPF, Chahan M. et al. Uncertainty and sensitivity analysis for probabilistic weather and climate-risk modelling: an implementation in CLIMADA v. 3.1. 0. Geoscientific Model Development, v. 15, n. 18, p. 7177-7201, 2022.
 
@@ -36,4 +36,82 @@ Once validated, the CLIMADA-BR framework will be disseminated through workshops,
 
 [3] MATTOS, Joao Pedro Rodrigues; MARCACINI, Ricardo M. Semi-supervised graph attention networks for event representation learning. In: 2021 IEEE International Conference on Data Mining (ICDM). IEEE, 2021. p. 1234-1239.
 
+## Updates
 
+### 11/08/2024
+
+At [CLIMADA-BR/doc/tutorial/TUTORIAL_BASE_CLIMADA_BR.ipynb](https://github.com/Labic-ICMC-USP/CLIMADA-BR/blob/main/doc/tutorial/TUTORIAL_BASE_CLIMADA_BR.ipynb) we have a minimalistic example of how CLIMADA works, which can also be run via our Google Colab [page](https://colab.research.google.com/drive/1Qa70_jpQhSFA-WGoO_gZxn0DjLj2DFbx?usp=sharing).
+
+To run it in your machine instead of Colab you need to follow the installation guide below and also download the [gpw_v4_population_count_rev11_2020_30_sec.tif](https://drive.google.com/uc?id=1-3Skg9WOBDq8AyFV_WIdVsFDXG40qKCv&confirm=t&uuid=19db6326-d640-4af6-8fbf-51e7e479a338) file, which needs to be put in the SYSTEM_DIR of climada or you need to pass the especific directory location in a part of the code (there are comments showing how to do it).
+
+## Installation Guide
+
+### Prerequisites
+
+* Make sure you are using the **latest version** of your OS. Install any outstanding **updates**.
+* Free up at least 10 GB of **free storage space** on your machine.
+  Anaconda and the CLIMADA dependencies will require around 5 GB of free space, and you will need at least that much additional space for storing the input and output data of CLIMADA.
+* Ensure a **stable internet connection** for the installation procedure.
+  All dependencies will be downloaded from the internet.
+  Do **not** use a metered, mobile connection!
+* Install `Anaconda`, following the [installation instructions](https://docs.anaconda.com/anaconda/install/) for your OS.
+
+### Instructions
+
+1. If you are using a **Linux** OS, make sure you have ``git`` installed
+   (Windows and macOS users are good to go once Anaconda is installed).
+   On Ubuntu and Debian, you may use APT:
+   
+```
+      apt update
+      apt install git
+```
+
+   Both commands will probably require administrator rights, which can be enabled by prepending ``sudo``.
+
+2. Create a **workspace directory**.
+   To make sure that your user can manipulate it without special privileges, use a subdirectory of your user/home directory.
+   Do **not** use a directory that is synchronized by cloud storage systems like OneDrive, iCloud or Polybox!
+
+3. Open the command line and navigate to the workspace directory you created using ``cd``.
+   Replace ``<path/to/workspace>`` with the path of the directory that contains the workspace folder:
+
+```
+      cd <path/to/workspace>
+```
+
+4. Clone CLIMADA-BR from its [GitHub repository](https://github.com/Labic-ICMC-USP/CLIMADA-BR.git).
+   Enter the directory and check out the branch of your choice.
+
+```
+      git clone https://github.com/Labic-ICMC-USP/CLIMADA-BR.git
+```
+
+5. Create an Anaconda environment called ``climada_env`` for installing CLIMADA.
+   Use the default environment specs in ``env_climada.yml`` to create it.
+   Then activate the environment:
+
+```
+      conda env create -n climada_env -f requirements/env_climada.yml
+      conda activate climada_env
+```
+
+6. Install the local CLIMADA source files as Python package using ``pip``:
+
+```
+      python -m pip install -e ./
+```
+
+hint:: Using a path ``./`` (referring to the path you are currently located at) will instruct ``pip`` to install the local files instead of downloading the module from the internet.
+      The ``-e`` (for "editable") option further instructs ``pip`` to link to the source files instead of copying them during installation.
+      This means that any changes to the source files will have immediate effects in your environment, and re-installing the module is never required.
+
+7. Verify that everything is installed correctly by executing a single test:
+
+```
+      python -m unittest climada.engine.test.test_impact
+```
+
+   Executing CLIMADA for the first time will take some time because it will generate a directory tree in your home/user directory.
+   If this test passes, great!
+   You are good to go.
