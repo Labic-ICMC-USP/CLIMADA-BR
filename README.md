@@ -1,6 +1,6 @@
 # CLIMADA-BR
 
-Climada-BR is a project of LABIC (Laboratory of Computational Intelligence from USP São Carlos), that seeks to improve hazard assesment in Brazil using LLM's (Large Language Models) for extracting event data from auternative sources. This repository is a fork from the original [CLIMADA](https://github.com/CLIMADA-project/climada_python) which stands for CLIMate ADAptation and is a probabilistic natural catastrophe impact model, that also calculates averted damage (benefit) thanks to adaptation measures of any kind (from grey to green infrastructure, behavioural, etc.). The installation Guide is at the end of the page.
+Climada-BR is a project of LABIC (Laboratory of Computational Intelligence from USP São Carlos), that seeks to improve hazard assesment in Brazil using LLM's (Large Language Models) for extracting event data from auternative sources. **This repository is a fork from the original [CLIMADA](https://github.com/CLIMADA-project/climada_python) which stands for CLIMate ADAptation and is a probabilistic natural catastrophe impact model**, that also calculates averted damage (benefit) thanks to adaptation measures of any kind (from grey to green infrastructure, behavioural, etc.). The installation Guide is at the end of the page.
 
 ## Introduction
 
@@ -40,7 +40,7 @@ To run it in your machine instead of Colab you need to follow the installation g
 
 At CLIMADA-BR/climada/ we have our API climadaBR which encapsulates the main functions used on our project, they are the following:
   * climadabr = ClimadaBR(); **Creates the object**
-  * climadabr.DefineExposures(self, countries, res_arcsec, fin_mode, data_dir = SYSTEM_DIR); **Define the exposures, currently only by country name (countries) and socio-economic value (fin_mode)**
+  * climadabr.DefineExposures(self, countries, res_arcsec, fin_mode, data_dir); **Define the exposures, currently only by country name (countries) and socio-economic value (fin_mode)**
   * climadabr.DefineHazards(self, ds, n_ev); **Define the hazards, receive a xarray.Dataset with the information and the number of events (n_ev)**
   * climadabr.DefineRandomHazards(self); **Define a random hypothetical hazard**
   * climadabr.AddImpactFunc(self, imp_fun); **Add a impact function to the ImpactFuncSet**
