@@ -30,12 +30,23 @@ Once validated, the CLIMADA-BR framework will be disseminated through workshops,
 
 ## Updates
 
-### 11/08/2024
+### Minimalistic Example
 
 At [CLIMADA-BR/doc/tutorial/TUTORIAL_BASE_CLIMADA_BR.ipynb](https://github.com/Labic-ICMC-USP/CLIMADA-BR/blob/main/doc/tutorial/TUTORIAL_BASE_CLIMADA_BR.ipynb) we have a minimalistic example of how CLIMADA works, which can also be run via our Google Colab [page](https://colab.research.google.com/drive/1Qa70_jpQhSFA-WGoO_gZxn0DjLj2DFbx?usp=sharing).
 
 To run it in your machine instead of Colab you need to follow the installation guide below and also download the [gpw_v4_population_count_rev11_2020_30_sec.tif](https://drive.google.com/uc?id=1-3Skg9WOBDq8AyFV_WIdVsFDXG40qKCv&confirm=t&uuid=19db6326-d640-4af6-8fbf-51e7e479a338) file, which needs to be put in the SYSTEM_DIR of climada or you need to pass the especific directory location in a part of the code (there are comments showing how to do it).
 
+### Climada-BR API
+
+At CLIMADA-BR/climada/ we have our API climadaBR which encapsulates the main functions used on our project, they are the following:
+  climadabr = ClimadaBR()
+  climadabr.DefineExposures(self, countries, res_arcsec, fin_mode, data_dir = SYSTEM_DIR)
+  climadabr.DefineHazards(self, ds, n_ev)
+  climadabr.DefineRandomHazards(self)
+  climadabr.AddImpactFunc(self, imp_fun)
+  climadabr.DefineRandomImpactFuncSet(self)
+  climadabr.ComputeImpact(self)
+  
 ## Installation Guide
 
 ### Prerequisites
