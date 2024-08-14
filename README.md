@@ -39,13 +39,13 @@ To run it in your machine instead of Colab you need to follow the installation g
 ### Climada-BR API
 
 At CLIMADA-BR/climada/ we have our API climadaBR which encapsulates the main functions used on our project, they are the following:
-  * climadabr = ClimadaBR(); Creates the object
-  * climadabr.DefineExposures(self, countries, res_arcsec, fin_mode, data_dir = SYSTEM_DIR); Define the exposures, currently only by country name (countries) and socio-economic value (fin_mode)
-  * climadabr.DefineHazards(self, ds, n_ev); Define the hazards, receive a xarray.Dataset with the information and the number of events (n_ev)
-  * climadabr.DefineRandomHazards(self); Define a random hypothetical hazard
-  * climadabr.AddImpactFunc(self, imp_fun); Add a impact function to the ImpactFuncSet
-  * climadabr.DefineRandomImpactFuncSet(self); Define a ImpactFuncSet with a single random ImpactFunc
-  * climadabr.ComputeImpact(self; Compute the impact
+  * climadabr = ClimadaBR(); **Creates the object**
+  * climadabr.DefineExposures(self, countries, res_arcsec, fin_mode, data_dir = SYSTEM_DIR); **Define the exposures, currently only by country name (countries) and socio-economic value (fin_mode)**
+  * climadabr.DefineHazards(self, ds, n_ev); **Define the hazards, receive a xarray.Dataset with the information and the number of events (n_ev)**
+  * climadabr.DefineRandomHazards(self); **Define a random hypothetical hazard**
+  * climadabr.AddImpactFunc(self, imp_fun); **Add a impact function to the ImpactFuncSet**
+  * climadabr.DefineRandomImpactFuncSet(self); **Define a ImpactFuncSet with a single random ImpactFunc**
+  * climadabr.ComputeImpact(self); **Compute the impact**
   
 ## Installation Guide
 

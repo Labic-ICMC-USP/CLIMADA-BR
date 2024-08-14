@@ -9,6 +9,21 @@ from scipy import sparse
 import xarray as xr
 
 class ClimadaBR():
+    """
+    API of the ClimadaBR project.
+
+    Attributes
+    ----------
+    exp_lp : LitPop
+        Holds geopandas GeoDataFrame with metada and columns (pd.Series) defined in Attributes of Exposures class.
+        LitPop exposure values are disaggregated proportional to a combination of nightlight intensity (NASA) and
+        Gridded Population data (SEDAC). Total asset values can be produced capital, population count, GDP, or 
+        non-financial wealth.
+    impf_set : ImpactFuncSet
+        Contains impact functions of type ImpactFunc.
+    haz : Hazard
+        Contains events of some hazard type defined at centroids.
+    """
     def __init__(self,
                  exp_lp: LitPop = None,
                  impf_set: ImpactFuncSet = None,
@@ -17,13 +32,53 @@ class ClimadaBR():
         self.impf_set = impf_set
         self.haz = haz
 
-    def DefineExposures(self, countries, res_arcsec, fin_mode, data_dir = SYSTEM_DIR):
+    def DefineExposures(self, countries, res_arcsec=30, fin_mode='pc', data_dir = SYSTEM_DIR):
+        """Define the exposures, currently only by country name (countries) and socio-economic value (fin_mode)
+
+        Parameters
+        ----------
+        countries: list with str or int
+            list containing country identifiers:
+            iso3alpha (e.g. 'JPN'), iso3num (e.g. 92) or name (e.g. 'Togo')
+        res_arcsec: float, optional
+            Horizontal resolution in arc-sec.
+            The default is 30 arcsec, this corresponds to roughly 1 km.
+        fin_mode: str, optional
+            Socio-economic value to be used as an asset base that is disaggregated
+            to the grid points within the country:
+
+            * 'pc': produced capital (Source: World Bank), incl. manufactured or
+              built assets such as machinery, equipment, and physical structures
+              `pc` is in constant 2014 USD.
+            * 'pop': population count (source: GPW, same as gridded population).
+              The unit is 'people'.
+            * 'gdp': gross-domestic product (Source: World Bank) [USD]
+            * 'income_group': gdp multiplied by country's income group+1 [USD].
+              Income groups are 1 (low) to 4 (high income).
+            * 'nfw': non-financial wealth (Source: Credit Suisse, of households only) [USD]
+            * 'tw': total wealth (Source: Credit Suisse, of households only) [USD]
+            * 'norm': normalized by country (no unit)
+            * 'none': LitPop per pixel is returned unchanged (no unit)
+
+            Default: 'pc'
+        data_dir : Path, optional
+            redefines path to input data directory. The default is SYSTEM_DIR.
+        """
         # using gpw_v4_population_count_rev11_2020_30_sec.tif (NASA)
         self.exp_lp = LitPop.from_countries(countries=countries, res_arcsec=res_arcsec, fin_mode=fin_mode, data_dir = data_dir)
         self.exp_lp.check()
         self.exp_lp.plot_raster()
 
     def DefineHazards(self, ds, n_ev):
+        """Define the hazards based on xr.Dataset information and number of events
+
+        Parameters
+        ----------
+        ds : xr.Dataset
+            xarray dataset with all the hazard values
+        n_ev: int
+            number of events
+        """
 
         intensity_sparse = sparse.csr_matrix(ds['intensity'].values)
         fraction_sparse = sparse.csr_matrix(ds['fraction'].values)
@@ -50,6 +105,8 @@ class ClimadaBR():
         self.haz.centroids.plot()
 
     def DefineRandomHazards(self):
+        """Define a random hypothetical hazard
+        """
         lat = np.array([    -22.90685, -23.55052, -12.9714, -8.04728, -3.71722,
             -27.5954, -25.4296, -22.7556, -16.463, -2.81972,
             -9.6658, -12.2628, -8.0512, -22.8119, -3.71722,
@@ -107,6 +164,13 @@ class ClimadaBR():
         self.DefineHazards(ds, n_ev)
 
     def AddImpactFunc(self, imp_fun):
+        """Takes a impact function and store it in the ImpactFuncSet
+
+        Parameters
+        ----------
+        imp_fun : ImpactFunc
+            Contains the definition of one impact function
+        """
         # check if the all the attributes are set correctly
         imp_fun.check()
         imp_fun.plot()
@@ -116,6 +180,9 @@ class ClimadaBR():
         self.impf_set.check()
 
     def DefineRandomImpactFuncSet(self):
+        """Define a ImpactFuncSet with a single random ImpactFunc with id = 'WEBSENSORS'
+        """
+
         haz_type = "WS"
         name = "WS Impact Function"
         intensity_unit = "ws impact"
@@ -148,6 +215,8 @@ class ClimadaBR():
         self.AddImpactFunc(imp_fun)
 
     def ComputeImpact(self):
+        """Computes Impact based on haz, impf_set and exp_lp
+        """
         # Get the hazard type and hazard id
         [haz_type] = self.impf_set.get_hazard_types()
         [haz_id] = self.impf_set.get_ids()[haz_type]
