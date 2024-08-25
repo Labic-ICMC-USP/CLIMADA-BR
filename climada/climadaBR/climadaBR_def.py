@@ -5,8 +5,10 @@ from climada.hazard import *
 from climada.entity import *
 from climada.engine import *
 import numpy as np
+import pandas as pd
 from scipy import sparse
 import xarray as xr
+import os
 
 class ClimadaBR():
     """
@@ -69,7 +71,7 @@ class ClimadaBR():
         self.exp_lp.check()
         self.exp_lp.plot_raster()
 
-    def DefineHazards(self, ds, n_ev):
+    def DefineHazards(self, ds, n_ev, haz_type):
         """Define the hazards based on xr.Dataset information and number of events
 
         Parameters
@@ -89,7 +91,7 @@ class ClimadaBR():
         orig = np.zeros(n_ev, dtype=bool)
         frequency = np.ones(n_ev) / n_ev
 
-        self.haz = Hazard(haz_type='WS',
+        self.haz = Hazard(haz_type=haz_type,
                     intensity=intensity_sparse,
                     fraction=fraction_sparse,
                     centroids=centroids,  # default crs used
@@ -163,6 +165,55 @@ class ClimadaBR():
 
         self.DefineHazards(ds, n_ev)
 
+    def HazardFromExcel(self, excel_file, data_dir=SYSTEM_DIR):
+        """Define a hazard from excel file
+        """
+        excel_file_path = os.path.join(data_dir, excel_file)
+
+        df = pd.read_excel(excel_file_path)
+
+        lat = df["lat"].to_numpy()
+
+        lon = df["lon"].to_numpy()
+
+        # EM NOSSO PROJETO, CADA EVENTO SERA SEU PROPRIO CENTROIDE
+        n_cen = len(lat) # number of centroids
+        n_ev = n_cen # number of events
+
+                # A INTENSIDADE DOS EVENTOS, NO PROJETO, SERA ESTIMADA POR VALORES DEFINIDOS
+        # NAS NOTICIAS, COM APOIO DE LLM. AQUI, GERAMOS RANDOM.
+        intensity = sparse.csr_matrix((n_ev, n_cen))
+        for n in range(0, n_cen):
+            intensity[n, n] = df["Dengue(Casos)"].values[n]
+
+        fraction = intensity.copy()
+        fraction.data.fill(1)
+
+        event_name = df["MUNICIPIO"].to_numpy()
+
+        event_date = []
+        for i in range(1,n_ev+1): event_date.append(721166+i)
+
+        intensity_dense = intensity.toarray()
+        fraction_dense = fraction.toarray()
+
+        ds = xr.Dataset(
+            {
+                'intensity': (['event', 'centroid'], intensity_dense),
+                'fraction': (['event', 'centroid'], fraction_dense),
+                'event_date': (['event'], event_date)
+            },
+            coords={
+                'latitude': (['centroid'], lat),
+                'longitude': (['centroid'], lon),
+                'event_name': (['event'], event_name)
+            }
+        )
+
+        haz_type = df["HAZ_TYPE"].values[0]
+
+        self.DefineHazards(ds, n_ev, haz_type)
+
     def AddImpactFunc(self, imp_fun):
         """Takes a impact function and store it in the ImpactFuncSet
 
@@ -202,6 +253,40 @@ class ClimadaBR():
 
         imp_fun = ImpactFunc(
             id='WEBSENSORS',
+            name=name,
+            intensity_unit=intensity_unit,
+            haz_type=haz_type,
+            intensity=intensity,
+            mdd=mdd,
+            paa=paa,
+        )
+
+        self.impf_set = ImpactFuncSet()
+
+        self.AddImpactFunc(imp_fun)
+
+    def DengueImpactFuncSet(self):
+        """Define a ImpactFuncSet with a single random ImpactFunc with id = 'WEBSENSORS'
+        """
+
+        haz_type = "DN"
+        name = "DENGUE Impact Function"
+        intensity_unit = "annual cases"
+
+        # provide RANDOM values for the hazard intensity, mdd, and paa
+        # AQUI TAMBEM TEMOS QUE DEFINIR COM BASE NOS EVENTOS E COM APOIO DE LLM
+
+        # PARAMETROS QUE IMPACT FUNCTION PRECISA
+        # intensity: Intensity values
+        # mdd: Mean damage (impact) degree for each intensity (numbers in [0,1])
+        # paa: Percentage of affected assets (exposures) for each intensity (numbers in [0,1])
+
+        intensity = np.array([200, 41641])
+        mdd = np.array([(200/41641), 1])
+        paa = np.array([1, 1])
+
+        imp_fun = ImpactFunc(
+            id='DENGUE',
             name=name,
             intensity_unit=intensity_unit,
             haz_type=haz_type,
