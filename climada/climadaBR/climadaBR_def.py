@@ -184,12 +184,12 @@ class ClimadaBR():
         # NAS NOTICIAS, COM APOIO DE LLM. AQUI, GERAMOS RANDOM.
         intensity = sparse.csr_matrix((n_ev, n_cen))
         for n in range(0, n_cen):
-            intensity[n, n] = df["Dengue(Casos)"].values[n]
+            intensity[n, n] = df["intensity"].values[n]
 
         fraction = intensity.copy()
         fraction.data.fill(1)
 
-        event_name = df["MUNICIPIO"].to_numpy()
+        event_name = df["event_name"].to_numpy()
 
         event_date = []
         for i in range(1,n_ev+1): event_date.append(721166+i)
@@ -210,7 +210,7 @@ class ClimadaBR():
             }
         )
 
-        haz_type = df["HAZ_TYPE"].values[0]
+        haz_type = df["haz_type"].values[0]
 
         self.DefineHazards(ds, n_ev, haz_type)
 
@@ -260,44 +260,50 @@ class ClimadaBR():
             mdd=mdd,
             paa=paa,
         )
-
         self.impf_set = ImpactFuncSet()
 
         self.AddImpactFunc(imp_fun)
 
-    def DengueImpactFuncSet(self):
-        """Define a ImpactFuncSet with a single random ImpactFunc with id = 'WEBSENSORS'
+    def ImpactFuncSetFromExcel(self, excel_file, data_dir=SYSTEM_DIR):
+        """Define a ImpactFuncSet from a excel file
+            Right now for excel with single ImpactFunc
         """
 
-        haz_type = "DN"
-        name = "DENGUE Impact Function"
-        intensity_unit = "annual cases"
-
-        # provide RANDOM values for the hazard intensity, mdd, and paa
-        # AQUI TAMBEM TEMOS QUE DEFINIR COM BASE NOS EVENTOS E COM APOIO DE LLM
-
-        # PARAMETROS QUE IMPACT FUNCTION PRECISA
-        # intensity: Intensity values
-        # mdd: Mean damage (impact) degree for each intensity (numbers in [0,1])
-        # paa: Percentage of affected assets (exposures) for each intensity (numbers in [0,1])
-
-        intensity = np.array([200, 41641])
-        mdd = np.array([(200/41641), 1])
-        paa = np.array([1, 1])
-
-        imp_fun = ImpactFunc(
-            id='DENGUE',
-            name=name,
-            intensity_unit=intensity_unit,
-            haz_type=haz_type,
-            intensity=intensity,
-            mdd=mdd,
-            paa=paa,
-        )
-
         self.impf_set = ImpactFuncSet()
 
-        self.AddImpactFunc(imp_fun)
+        excel_file_path = os.path.join(data_dir, excel_file)
+
+        df = pd.read_excel(excel_file_path)
+
+        num = int(df["num"].values[0])
+
+        for i in range(0, num):
+            str_i =str(i)
+
+            haz_type = df["haz_type"].values[i]
+            name = df["name"].values[i]
+            intensity_unit = df["intensity_unit"].values[i]
+
+            # PARAMETROS QUE IMPACT FUNCTION PRECISA
+            # intensity: Intensity values
+            # mdd: Mean damage (impact) degree for each intensity (numbers in [0,1])
+            # paa: Percentage of affected assets (exposures) for each intensity (numbers in [0,1])
+
+            intensity = df["intensity" + str_i].to_numpy()
+            mdd = df["mdd" + str_i].to_numpy()
+            paa = df["paa" + str_i].to_numpy()
+
+            imp_fun = ImpactFunc(
+                id=str_i,
+                name=name,
+                intensity_unit=intensity_unit,
+                haz_type=haz_type,
+                intensity=intensity,
+                mdd=mdd,
+                paa=paa,
+            )
+
+            self.AddImpactFunc(imp_fun)
 
     def ComputeImpact(self):
         """Computes Impact based on haz, impf_set and exp_lp
