@@ -178,18 +178,18 @@ class ClimadaBR():
 
         # EM NOSSO PROJETO, CADA EVENTO SERA SEU PROPRIO CENTROIDE
         n_cen = len(lat) # number of centroids
-        n_ev = n_cen # number of events
+        n_ev = df['n_events'].values[0] # number of events
 
-                # A INTENSIDADE DOS EVENTOS, NO PROJETO, SERA ESTIMADA POR VALORES DEFINIDOS
+        # A INTENSIDADE DOS EVENTOS, NO PROJETO, SERA ESTIMADA POR VALORES DEFINIDOS
         # NAS NOTICIAS, COM APOIO DE LLM. AQUI, GERAMOS RANDOM.
         intensity = sparse.csr_matrix((n_ev, n_cen))
-        for n in range(0, n_cen):
-            intensity[n, n] = df["intensity"].values[n]
+        for n in range(0, n_ev):
+            intensity[n] = df["event"+str(n+1)].to_numpy()
 
-        fraction = intensity.copy()
-        fraction.data.fill(1)
+        fraction = sparse.csr_matrix((n_ev, n_cen))
 
-        event_name = df["event_name"].to_numpy()
+        event_name = []
+        for i in range(1,n_ev+1): event_name.append("month"+str(i))
 
         event_date = []
         for i in range(1,n_ev+1): event_date.append(721166+i)
@@ -277,7 +277,7 @@ class ClimadaBR():
 
         num = int(df["num"].values[0])
 
-        for i in range(0, num):
+        for i in range(1, num+1):
             str_i =str(i)
 
             haz_type = df["haz_type"].values[i]
