@@ -17,7 +17,7 @@ This file is the source file for the hazard data, it contains DENGUE notificatio
 
 After downloading, you will have an '.dbc' file which will need to be converted to a '.dbf' file using the [pysus](https://github.com/danicat/pysus) github repository. With an '.dbf' file you can open it with excel and then save it as a 'DENGBR23.xlsx' file for easier access.
 
-This file is very big so for modeling our data I opened it and deleted the columns which aren't needed, the results are in file DENGUE2023.xlsx'.
+This file is very big so for modeling our data I opened it and deleted the columns which aren't needed, the results are in file DENGUE2023.xlsx', which contains only the dates of the notifications of dengue cases and the ID of the municipality where it happened.
 
 ## municipios.csv
 
