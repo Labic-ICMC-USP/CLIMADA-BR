@@ -163,7 +163,7 @@ class ClimadaBR():
             }
         )
 
-        self.DefineHazards(ds, n_ev)
+        self.DefineHazards(ds, n_ev, "WS")
 
     def HazardFromExcel(self, excel_file, data_dir=SYSTEM_DIR):
         """Define a hazard from excel file
@@ -277,8 +277,8 @@ class ClimadaBR():
 
         num = int(df["num"].values[0])
 
-        for i in range(1, num+1):
-            str_i =str(i)
+        for i in range(0, num):
+            str_i =str(i+1)
 
             haz_type = df["haz_type"].values[i]
             name = df["name"].values[i]

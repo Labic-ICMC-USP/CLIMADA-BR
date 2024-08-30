@@ -48,6 +48,10 @@ At CLIMADA-BR/climada/ we have our API climadaBR which encapsulates the main fun
   * climadabr.DefineRandomImpactFuncSet(self); **Define a ImpactFuncSet with a single random ImpactFunc**
   * climadabr.ImpactFuncSetFromExcel(self, excel_file, data_dir); **Define a ImpactFuncSet from excel file data**
   * climadabr.ComputeImpact(self); **Compute the impact**
+
+### DENGUE documentation
+
+At CLIMADA-BR/doc/dengue_docs/ we have the documentation used for defining our dengue hazards and impact functions, the files used in our Tutorial_DENGUE.ipynb are also there. There is a README.md file explaining our sources and the modeling of the data [here](https://github.com/Labic-ICMC-USP/CLIMADA-BR/blob/main/doc/dengue_docs/README.md).
   
 ## Installation Guide
 
