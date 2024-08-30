@@ -43,8 +43,10 @@ At CLIMADA-BR/climada/ we have our API climadaBR which encapsulates the main fun
   * climadabr.DefineExposures(self, countries, res_arcsec, fin_mode, data_dir); **Define the exposures, currently only by country name (countries) and socio-economic value (fin_mode)**
   * climadabr.DefineHazards(self, ds, n_ev); **Define the hazards, receive a xarray.Dataset with the information and the number of events (n_ev)**
   * climadabr.DefineRandomHazards(self); **Define a random hypothetical hazard**
+  * climadabr.HazardFromExcel(self, excel_file, data_dir); **Define hazard from excel file data**
   * climadabr.AddImpactFunc(self, imp_fun); **Add a impact function to the ImpactFuncSet**
   * climadabr.DefineRandomImpactFuncSet(self); **Define a ImpactFuncSet with a single random ImpactFunc**
+  * climadabr.ImpactFuncSetFromExcel(self, excel_file, data_dir); **Define a ImpactFuncSet from excel file data**
   * climadabr.ComputeImpact(self); **Compute the impact**
   
 ## Installation Guide
