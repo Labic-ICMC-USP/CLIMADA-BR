@@ -50,8 +50,8 @@ At CLIMADA-BR/climada/ we have our API climadaBR which encapsulates the main fun
   * climadabr.ImpactFuncSetFromExcel(self, excel_file, data_dir); **Define a ImpactFuncSet from excel file data**
   * climadabr.ComputeImpact(self); **Compute the impact**
     
-  * Conversor.convert_datasus_data(file_name, by_month_only, max_month, end_file_name)
-  * Conversor.convert_news_data(file_name, severity_threshold, by_month_only, max_month, end_file_name)
+  * Conversor.convert_datasus_data(file_name, by_month_only, max_month, end_file_name); **Model data from a file downloaded from Datasus**
+  * Conversor.convert_news_data(file_name, severity_threshold, by_month_only, max_month, end_file_name); **Model data from a file made from news analysis**
     
 
 ### DENGUE documentation
@@ -60,7 +60,7 @@ At CLIMADA-BR/doc/dengue_docs/ we have the documentation used for defining our d
 
 ### Dengue Tutorial
 
-Ai CLIMADA-BR/doc/tutorial/Tutorial_DENGUE.ipynb/ we have a tutorial similar to our minimalistic example but equipped with our Conversor class, which take the dengue files (read the DENGUE documentation to know where to put your files) and convert them into a way that CLIMADA-BR can read and do the impact calculation for us, and other specific functions. Its goal is to be where we test how close can we take the events from news and aproximate them to the oficial data from trustable sources.
+At [CLIMADA-BR/doc/tutorial/Tutorial_DENGUE.ipynb](https://github.com/Labic-ICMC-USP/CLIMADA-BR/blob/main/doc/tutorial/TUTORIAL_DENGUE.ipynb) we have a tutorial similar to our minimalistic example but equipped with our Conversor class, which take the dengue files (read the DENGUE documentation to know where to put your files) and convert them into a way that CLIMADA-BR can read and do the impact calculation for us, and other specific functions. Its goal is to be where we test how close can we take the events from news and aproximate them to the oficial data from trustable sources.
   
 ## Installation Guide
 
