@@ -4,12 +4,11 @@ This file contains all the documentation from DENGUE hazard data and impact func
 
 # FILES
 
-The DENGUE data was taken from 3 main sources and are related to the following files:
+The DENGUE data was taken from 4 main sources and are related to the following files:
 - DENGBR23.dbc (DENGUE2023.xlsx)
 - municipios.csv
+- dengue_hazzards_news.xlsx
 - DengueFunc.xlsx
-
-The last file 'TabelaDengueCoordMonth.xlsx' is the file used in our Tutorial_DENGUE.ipynb to model our hazard, while the DengueFunc.xlsx is used to model our impact functions.
 
 ## DENGBR23.dbc (DENGUE2023.xlsx)
 
@@ -23,14 +22,12 @@ This file is very big so for modeling our data I opened it and deleted the colum
 
 This file can be taken form the [mapaslivres](https://github.com/mapaslivres/municipios-br/blob/main/tabelas/municipios.csv) github, it contains information on all brazilian municips, including municipality id, name, population in 2021 and coordinates. Together with the DENGBR23.dbc it contains all data necessary for modeling the hazard.
 
+## dengue_hazzards_news.xlsx
+
+This file contains all the information for modeling the hazard, but its sources are from news articles and not researchs like 'DENGBR23.dbc'. Our objective is to have this information when computated by CLIMADA produce similar results to the data from the previous files.
+
 ## DengueFunc.xlsx
 
 This file was made by trial and error to aproximate the impact calculation to a desired value. The desired value was taken from an [research](https://www.fiemg.com.br/wp-content/uploads/2024/03/Impactos-Economicos-Arboviroses-somente-efeito-induzido.pdf) made by FIEMG which estimates the economic impact of arboviruses based on the number of infected people.
 
 Takin the value of 4.2 million infected people, the research arrives at the loss of 20.3 billion reais. Adapting to the data from the DENGBR23.dbc file, we were going to need an impact of 5.068112500 billion reais or 913.173423 million dolars, which the functions in this file gets quite close to.
-
-## TabelaDengueCoordMonth.xlsx
-
-This file is obtained by modeling and joining the 'DENGUE2023.xlsx' and the 'municipios.csv' files. It contains all information needed for defining the dengue hazard.
-
-You can also obtain this file by running the 'convert.py', 'convert2.py' and 'convert3.py' in order, as they are python scripts which take the 'DENGUE2023.xlsx' and the 'municipios.csv' files and do the modeling for you.

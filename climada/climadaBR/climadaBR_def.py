@@ -165,25 +165,30 @@ class ClimadaBR():
 
         self.DefineHazards(ds, n_ev, "WS")
 
-    def HazardFromExcel(self, excel_file, data_dir=SYSTEM_DIR):
+    def HazardFromCSV(self, csv_file, data_dir=SYSTEM_DIR):
         """Define a hazard from excel file
         """
-        excel_file_path = os.path.join(data_dir, excel_file)
+        print(1)
+        csv_file_path = os.path.join(data_dir, csv_file)
 
-        df = pd.read_excel(excel_file_path)
+        df = pd.read_csv(csv_file_path)
 
+        print(2)
         lat = df["lat"].to_numpy()
 
         lon = df["lon"].to_numpy()
 
+        print(3)
         # EM NOSSO PROJETO, CADA EVENTO SERA SEU PROPRIO CENTROIDE
         n_cen = len(lat) # number of centroids
         n_ev = df['n_events'].values[0] # number of events
 
+        print(4)
         # A INTENSIDADE DOS EVENTOS, NO PROJETO, SERA ESTIMADA POR VALORES DEFINIDOS
         # NAS NOTICIAS, COM APOIO DE LLM. AQUI, GERAMOS RANDOM.
         intensity = sparse.csr_matrix((n_ev, n_cen))
         for n in range(0, n_ev):
+            print("Loop ", n)
             intensity[n] = df["event"+str(n+1)].to_numpy()
 
         fraction = sparse.csr_matrix((n_ev, n_cen))
@@ -196,6 +201,64 @@ class ClimadaBR():
 
         intensity_dense = intensity.toarray()
         fraction_dense = fraction.toarray()
+
+        print(5)
+
+        ds = xr.Dataset(
+            {
+                'intensity': (['event', 'centroid'], intensity_dense),
+                'fraction': (['event', 'centroid'], fraction_dense),
+                'event_date': (['event'], event_date)
+            },
+            coords={
+                'latitude': (['centroid'], lat),
+                'longitude': (['centroid'], lon),
+                'event_name': (['event'], event_name)
+            }
+        )
+
+        haz_type = df["haz_type"].values[0]
+
+        self.DefineHazards(ds, n_ev, haz_type)
+
+    def HazardFromExcel(self, excel_file, data_dir=SYSTEM_DIR):
+        """Define a hazard from excel file
+        """
+        print(1)
+        excel_file_path = os.path.join(data_dir, excel_file)
+
+        df = pd.read_excel(excel_file_path)
+
+        print(2)
+        lat = df["lat"].to_numpy()
+
+        lon = df["lon"].to_numpy()
+
+        print(3)
+        # EM NOSSO PROJETO, CADA EVENTO SERA SEU PROPRIO CENTROIDE
+        n_cen = len(lat) # number of centroids
+        n_ev = df['n_events'].values[0] # number of events
+
+        print(4)
+        # A INTENSIDADE DOS EVENTOS, NO PROJETO, SERA ESTIMADA POR VALORES DEFINIDOS
+        # NAS NOTICIAS, COM APOIO DE LLM. AQUI, GERAMOS RANDOM.
+        intensity = sparse.csr_matrix((n_ev, n_cen))
+        for n in range(0, n_ev):
+            print("Loop ", n)
+            intensity[n] = df["event"+str(n+1)].to_numpy()
+
+        fraction = sparse.csr_matrix((n_ev, n_cen))
+
+        event_name = []
+        for i in range(1,n_ev+1): event_name.append("month"+str(i))
+
+        event_date = []
+        for i in range(1,n_ev+1): event_date.append(721166+i)
+
+        intensity_dense = intensity.toarray()
+        fraction_dense = fraction.toarray()
+
+        print(5)
 
         ds = xr.Dataset(
             {
