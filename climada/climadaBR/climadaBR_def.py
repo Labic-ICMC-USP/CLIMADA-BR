@@ -21,7 +21,7 @@ class ClimadaBR():
     Attributes
     ----------
     exp_lp : LitPop
-        Holds geopandas GeoDataFrame with metada and columns (pd.Series) defined in Attributes of Exposures class.
+        Holds geopandas GeoDataFrame with metadata and columns (pd.Series) defined in Attributes of Exposures class.
         LitPop exposure values are disaggregated proportional to a combination of nightlight intensity (NASA) and
         Gridded Population data (SEDAC). Total asset values can be produced capital, population count, GDP, or 
         non-financial wealth.
@@ -29,6 +29,14 @@ class ClimadaBR():
         Contains impact functions of type ImpactFunc.
     haz : Hazard
         Contains events of some hazard type defined at centroids.
+    haz_dt : pandas.DataFrame
+        DataFrame containing processed hazard data.
+    haz_reg : HazReg
+        Instance of hazard regularization, if applicable.
+    by_month_only : bool
+        Whether to group events by month only.
+    imp : ImpactCalc
+        Stores the computed impact results.
     """
 
     def DefineExposures(self, countries, res_arcsec=30, fin_mode='pc', data_dir = SYSTEM_DIR):
@@ -69,6 +77,13 @@ class ClimadaBR():
         self.exp_lp.check()
 
     def Set_Exposure(self, exp_lp : LitPop):
+        """Set the exposure data.
+        
+        Parameters
+        ----------
+        exp_lp : LitPop
+            An instance of LitPop containing exposure data.
+        """
         
         print("=================\nDefining Exposure\n=================")
 
@@ -78,10 +93,17 @@ class ClimadaBR():
             self.DefineExposures(['BRA'], 300, 'income_group')
 
     def Plot_Exposure(self):
+        """Plot the exposure data as a raster."""
+
         self.exp_lp.plot_raster()
 
     def HazardFromDF(self, df):
-        """Define a hazard from dataframe
+        """Define a hazard from a dataframe.
+
+        Parameters
+        ----------
+        df : pandas.DataFrame
+            DataFrame containing hazard event data.
         """
 
         lat = df["lat"].to_numpy()
@@ -126,9 +148,30 @@ class ClimadaBR():
         self.haz.check()
 
     def Set_Hazard(self, haz_file, haz : Hazard = None, regulated = False, use_severity_threshold = False, severity_threshold = 0.1, by_month_only = False, max_month = 12):
-        
+        """Set the hazard data from a file or an existing Hazard object.
+
+        Parameters
+        ----------
+        haz_file : str
+            Path to the hazard data file.
+        haz : Hazard, optional
+            An existing Hazard object. If None, the hazard data is loaded from the file.
+        regulated : bool, optional
+            Whether to apply hazard regularization. Default is False.
+        use_severity_threshold : bool, optional
+            Whether to filter events by severity threshold. Default is False.
+        severity_threshold : float, optional
+            The severity threshold to use if filtering is enabled. Default is 0.1.
+        by_month_only : bool, optional
+            Whether to group events by month only. Default is False.
+        max_month : int, optional
+            Maximum month value for filtering. Default is 12.
+        """
+
         print("===============\nDefining Hazard\n===============")
         
+        self.by_month_only = by_month_only
+
         self.haz = haz
 
         if(haz == None):
@@ -146,14 +189,33 @@ class ClimadaBR():
 
                 self.HazardFromDF(self.haz_dt)
 
-    def Set_Datasus_Hazard(self, haz_file, by_month_only = True, max_month = 12, minimum_cases = 100, by_pop_size=False):
+    def Set_Datasus_Hazard(self, haz_file, by_month_only = False, max_month = 12, minimum_cases = 100, by_pop_size=False):
+        """Set the hazard data from a Datasus file.
+
+        Parameters
+        ----------
+        haz_file : str
+            Path to the Datasus hazard data file.
+        by_month_only : bool, optional
+            Whether to group events by month only. Default is False.
+        max_month : int, optional
+            Maximum month value for filtering. Default is 12.
+        minimum_cases : int, optional
+            Minimum number of cases required for hazard inclusion. Default is 100.
+        by_pop_size : bool, optional
+            Whether to normalize hazard impact data by population size. Default is False.
+        """
         
         print("===============\nDefining Hazard\n===============")
+
+        self.by_month_only = by_month_only
         
         self.haz_dt = Conversor.convert_datasus_data(haz_file, by_month_only, max_month, minimum_cases, by_pop_size)
         self.HazardFromDF(self.haz_dt)
 
     def Plot_Haz_Centroids(self):
+        """Plot hazard centroids on a map."""
+
         self.haz.centroids.plot()
 
     def AddImpactFunc(self, imp_fun):
@@ -173,7 +235,13 @@ class ClimadaBR():
 
     def ImpactFuncSetFromExcel(self, excel_file, data_dir=SYSTEM_DIR):
         """Define a ImpactFuncSet from a excel file
-            Right now for excel with single ImpactFunc
+
+        Parameters
+        ----------
+        excel_file : str
+            Contains the excel file name.
+        data_dir : Path, optional
+            redefines path to input data directory. The default is SYSTEM_DIR.
         """
 
         self.impf_set = ImpactFuncSet()
@@ -213,6 +281,15 @@ class ClimadaBR():
             self.AddImpactFunc(imp_fun)
 
     def Set_ImpFun(self, impctFunc_file, impf_set : ImpactFuncSet = None):
+        """Set the impact function set from a file or an existing ImpactFuncSet object.
+
+        Parameters
+        ----------
+        impctFunc_file : str
+            Path to the impact function file.
+        impf_set : ImpactFuncSet, optional
+            An existing ImpactFuncSet object. If None, the impact function set is loaded from the file.
+        """
 
         print("============================\nDefining Impact Function Set\n============================")
         
@@ -223,6 +300,8 @@ class ClimadaBR():
                 self.ImpactFuncSetFromExcel(impctFunc_file)
 
     def Plot_ImpFun(self):
+        """Plot the Impact Function Set"""
+
         self.impf_set.plot()
 
     def ComputeImpact(self):
@@ -246,6 +325,8 @@ class ClimadaBR():
             self.imp = ImpactCalc(self.exp_lp, self.impf_set, self.haz).impact(save_mat=False)  # Do not save the results geographically resolved (only aggregate values)
 
     def Results(self):
+        """Display computed impact results."""
+
         self.imp.plot_raster_eai_exposure()
 
         if(self.by_month_only):
@@ -263,6 +344,31 @@ class ClimadaBR():
                  exp_lp: LitPop = None,
                  impf_set: ImpactFuncSet = None,
                  haz: Hazard = None):
+        """Initialize the ClimadaBR class with exposure, hazard, and impact function data.
+
+        Parameters
+        ----------
+        haz_file : str
+            Path to the hazard data file.
+        impctFunc_file : str
+            Path to the impact function file.
+        regulated : bool, optional
+            Whether to apply hazard regularization. Default is False.
+        use_severity_threshold : bool, optional
+            Whether to filter events by severity threshold. Default is False.
+        severity_threshold : float, optional
+            The severity threshold to use if filtering is enabled. Default is 0.1.
+        by_month_only : bool, optional
+            Whether to group events by month only. Default is False.
+        max_month : int, optional
+            Maximum month value for filtering. Default is 12.
+        exp_lp : LitPop, optional
+            An existing LitPop exposure dataset. If None, it is initialized.
+        impf_set : ImpactFuncSet, optional
+            An existing impact function set. If None, it is initialized.
+        haz : Hazard, optional
+            An existing Hazard object. If None, it is initialized.
+        """
 
         self.by_month_only = by_month_only
 
