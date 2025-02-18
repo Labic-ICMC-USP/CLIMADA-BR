@@ -32,35 +32,30 @@ Once validated, the CLIMADA-BR framework will be disseminated through workshops,
 
 ### Minimalistic Example
 
-At [CLIMADA-BR/doc/tutorial/TUTORIAL_BASE_CLIMADA_BR.ipynb](https://github.com/Labic-ICMC-USP/CLIMADA-BR/blob/main/doc/tutorial/TUTORIAL_BASE_CLIMADA_BR.ipynb) we have a minimalistic example of how CLIMADA works, which can also be run via our Google Colab [page](https://colab.research.google.com/drive/1Qa70_jpQhSFA-WGoO_gZxn0DjLj2DFbx?usp=sharing).
+At [CLIMADA-BR/doc/tutorial/TUTORIAL_BASE_CLIMADA_BR.ipynb](https://github.com/Labic-ICMC-USP/CLIMADA-BR/blob/main/doc/tutorial/TUTORIAL_BASE_CLIMADA_BR.ipynb) we have a minimalistic example of how CLIMADA works through our ClimadaBR API. You can also check Climada's official tutorials to learn more, you can start with [CLIMADA-BR/doc/tutorial/1_main_climada.ipynb](https://github.com/Labic-ICMC-USP/CLIMADA-BR/blob/main/doc/tutorial/1_main_climada.ipynb).
 
-To run it in your machine instead of Colab you need to follow the installation guide below and also download the [gpw_v4_population_count_rev11_2020_30_sec.tif](https://drive.google.com/uc?id=1-3Skg9WOBDq8AyFV_WIdVsFDXG40qKCv&confirm=t&uuid=19db6326-d640-4af6-8fbf-51e7e479a338) file, which needs to be put in the SYSTEM_DIR of climada or you need to pass the especific directory location in a part of the code (there are comments showing how to do it).
+To run every ClimadaBR tutorial in your machine you need to follow the installation guide below and also download the [gpw_v4_population_count_rev11_2020_30_sec.tif](https://drive.google.com/uc?id=1-3Skg9WOBDq8AyFV_WIdVsFDXG40qKCv&confirm=t&uuid=19db6326-d640-4af6-8fbf-51e7e479a338). This folder, along with some other files that are in the [CLIMADA-BR/doc/ClimadaBR_docs](https://github.com/Labic-ICMC-USP/CLIMADA-BR/blob/main/doc/ClimadaBR_docs) folder, need to be put in the SYSTEM_DIR of climada. Check out this README file [CLIMADA-BR/doc/ClimadaBR_docs/README.md](https://github.com/Labic-ICMC-USP/CLIMADA-BR/blob/main/doc/ClimadaBR_docs/README.md) to do it correctly.
 
 ### Climada-BR API
 
-At CLIMADA-BR/climada/ we have our API climadaBR which encapsulates the main functions used on our project, they are the following:
-  * climadabr = ClimadaBR(); **Creates the object**
-  * climadabr.DefineExposures(self, countries, res_arcsec, fin_mode, data_dir); **Define the exposures, currently only by country name (countries) and socio-economic value (fin_mode)**
-  * climadabr.DefineHazards(self, ds, n_ev); **Define the hazards, receive a xarray.Dataset with the information and the number of events (n_ev)**
-  * climadabr.DefineRandomHazards(self); **Define a random hypothetical hazard**
-  * climadabr.HazardFromCSV(self, csv_file, data_dir); **Define hazard from csv file data**
-  * climadabr.HazardFromExcel(self, excel_file, data_dir); **Define hazard from excel file data**
-  * climadabr.AddImpactFunc(self, imp_fun); **Add a impact function to the ImpactFuncSet**
-  * climadabr.DefineRandomImpactFuncSet(self); **Define a ImpactFuncSet with a single random ImpactFunc**
-  * climadabr.ImpactFuncSetFromExcel(self, excel_file, data_dir); **Define a ImpactFuncSet from excel file data**
-  * climadabr.ComputeImpact(self); **Compute the impact**
-    
-  * Conversor.convert_datasus_data(file_name, by_month_only, max_month, end_file_name); **Model data from a file downloaded from Datasus**
-  * Conversor.convert_news_data(file_name, severity_threshold, by_month_only, max_month, end_file_name); **Model data from a file made from news analysis**
-    
+At CLIMADA-BR/climada/ we have our API climadaBR which encapsulates the main functions used on our project, climadaBR has 5 python files: an 'init.py', 'climadaBR_def.py' (where the user can define the climadaBR object and interact with it), 'file_conversor.py' (which takes an file and organizes the data into a dataframe that can be passed to Climada to define a hazard), hazardRegularization.py (contain the process of using a GCN to regularize part of the data of some hazard file) and utils.py (which has some non excential tools used in the project).
 
-### DENGUE documentation
+The main functions a user will need to use climada are:
 
-At CLIMADA-BR/doc/dengue_docs/ we have the documentation used for defining our dengue hazards and impact functions, the files used in our Tutorial_DENGUE.ipynb are also there. There is a README.md file explaining our sources [here](https://github.com/Labic-ICMC-USP/CLIMADA-BR/blob/main/doc/dengue_docs/README.md).
+- ClimadaBR(haz_file, impctFunc_file, regulated, use_severity_threshold, severity_threshold, by_month_only, max_month, exp_lp, impf_set, haz): object creation, haz_file and impactFunc_file are the only necessary parameters, the rest is additional.
+- ClimadaBR.Results(): to see the results of the Climada calculation.
+- ClimadaBR.Plot_Exposure(): to see the Exposure used in the calculation.
+- ClimadaBR.Plot_Haz_Centroids(): to see the centroids, which are the locations where our groups of events happened.
+- ClimadaBR.Plot_ImpFun(): to see the impact function used.
+- ClimadaBR.haz_reg.Results_Plots(): to see the changes made to the severity values by using a GCN to better classify the events.
 
-### Dengue Tutorial
+This tutorial can show you how to use each of them [CLIMADA-BR/doc/tutorial/Tutorial_ClimadaBR.ipynb](https://github.com/Labic-ICMC-USP/CLIMADA-BR/blob/main/doc/tutorial/Tutorial_ClimadaBR.ipynb).
 
-At [CLIMADA-BR/doc/tutorial/Tutorial_DENGUE.ipynb](https://github.com/Labic-ICMC-USP/CLIMADA-BR/blob/main/doc/tutorial/TUTORIAL_DENGUE.ipynb) we have a tutorial similar to our minimalistic example but equipped with our Conversor class, which take the dengue files (read the DENGUE documentation to know where to put your files) and convert them into a way that CLIMADA-BR can read and do the impact calculation for us, and other specific functions. Its goal is to be where we test how close can we take the events from news and aproximate them to the oficial data from trustable sources.
+If you want to see the other functions you can see the python files or our other tutorials to learn about them, but they probably are not necessary for you to use the application.
+
+### DENGUE Hazard
+
+In our project we thought of expanding the climate analysis function of Climada into a tool to analyse other types of events, in this case deseases and epydemics. So for our project we used dengue data from Brazil to compute the economic impact in a year, see this tutorial to have a full understanding of how we did that and which studies we took as base for our project [CLIMADA-BR/doc/tutorial/Tutorial_Dengue.ipynb](https://github.com/Labic-ICMC-USP/CLIMADA-BR/blob/main/doc/tutorial/Tutorial_Dengue.ipynb).
   
 ## Installation Guide
 

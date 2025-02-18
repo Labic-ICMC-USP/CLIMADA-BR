@@ -64,131 +64,26 @@ class ClimadaBR():
             redefines path to input data directory. The default is SYSTEM_DIR.
         """
 
-        print("=================\nDefining Exposure\n=================")
-
         # using gpw_v4_population_count_rev11_2020_30_sec.tif (NASA)
         self.exp_lp = LitPop.from_countries(countries=countries, res_arcsec=res_arcsec, fin_mode=fin_mode, data_dir = data_dir)
         self.exp_lp.check()
 
+    def Set_Exposure(self, exp_lp : LitPop):
+        
+        print("=================\nDefining Exposure\n=================")
+
+        self.exp_lp = exp_lp
+
+        if(exp_lp == None):
+            self.DefineExposures(['BRA'], 300, 'income_group')
+
     def Plot_Exposure(self):
         self.exp_lp.plot_raster()
-
-    def DefineRandomHazards(self):
-        """Define a random hypothetical hazard
-        """
-
-        print("===============\nDefining Hazard\n===============")
-
-        lat = np.array([    -22.90685, -23.55052, -12.9714, -8.04728, -3.71722,
-            -27.5954, -25.4296, -22.7556, -16.463, -2.81972,
-            -9.6658, -12.2628, -8.0512, -22.8119, -3.71722,
-            -15.601, -30.0346, -3.10194, -22.3789, -21.7611,
-            -13.0166, -4.1008, -2.53073, -28.2639, -20.355,
-            -23.8101, -22.9625, -14.8233, -19.0139, -11.4236,
-            -23.7122, -21.7611, -22.9056, -23.967, -25.5163,
-            -3.7973, -12.2552, -2.897, -14.8628, -1.4485,
-            -7.71833, -25.4284, -17.2298, -8.7597, -20.6713,
-            -12.9333, -21.6226, -18.7154, -4.3601, -25.9625])
-
-        lon = np.array([    -43.1729, -46.63331, -38.5014, -34.8788, -38.5433,
-            -48.548, -49.2713, -41.8787, -39.1523, -40.3097,
-            -35.7353, -38.9577, -34.877, -43.1791, -38.5433,
-            -38.097, -51.2177, -60.025, -41.778, -41.3307,
-            -38.9224, -38.535, -44.3028, -48.6756, -40.2508,
-            -45.7033, -42.3656, -40.0638, -39.7496, -37.3623,
-            -45.8513, -41.3307, -43.1964, -46.2945, -48.6713,
-            -38.5747, -38.9868, -41.1677, -40.8006, -48.5043,
-            -34.9128, -49.064, -39.0104, -35.7025, -40.229,
-            -38.9995, -41.059, -39.2536, -39.3044, -48.6356])
-
-        # EM NOSSO PROJETO, CADA EVENTO SERA SEU PROPRIO CENTROIDE
-        n_cen = 50 # number of centroids
-        n_ev = 50 # number of events
-
-        # A INTENSIDADE DOS EVENTOS, NO PROJETO, SERA ESTIMADA POR VALORES DEFINIDOS
-        # NAS NOTICIAS, COM APOIO DE LLM. AQUI, GERAMOS RANDOM.
-        intensity = sparse.csr_matrix(np.random.random((n_ev, n_cen)))
-        fraction = intensity.copy()
-        fraction.data.fill(1)
-
-        event_name = []
-        for i in range(1,n_ev+1): event_name.append('event_'+str(i))
-
-        event_date = []
-        for i in range(1,n_ev+1): event_date.append(721166+i)
-
-        self.haz = Hazard(haz_type="WS",
-                    intensity=intensity,
-                    fraction=fraction,
-                    centroids=Centroids.from_lat_lon(lat, lon),  # default crs used
-                    units='impact',
-                    event_id=np.arange(n_ev, dtype=int),
-                    event_name=event_name,
-                    date=event_date,
-                    orig=np.zeros(n_ev, dtype=bool),
-                    frequency=np.ones(n_ev) / n_ev
-        )
-
-        self.haz.check()
-
-    def HazardFromCSV(self, csv_file, data_dir=SYSTEM_DIR):
-        """Define a hazard from excel file
-        """
-
-        print("===============\nDefining Hazard\n===============")
-
-        csv_file_path = os.path.join(data_dir, csv_file)
-
-        df = pd.read_csv(csv_file_path)
-
-        lat = df["lat"].to_numpy()
-        lat = lat[~np.isnan(lat)]
-
-        lon = df["lon"].to_numpy()
-        lon = lon[~np.isnan(lon)]
-        
-        n_cen = len(lat) # number of centroids
-        n_ev = df['n_events'].values[0] # number of events
-
-        # A INTENSIDADE DOS EVENTOS, NO PROJETO, SERA ESTIMADA POR VALORES DEFINIDOS
-        # NAS NOTICIAS, COM APOIO DE LLM. AQUI, GERAMOS RANDOM.
-        intensity = sparse.csr_matrix((n_ev, n_cen))
-        for n in range(0, n_ev):
-            print("Loop ", n)
-            intensity_aux = df["event"+str(n+1)].to_numpy()
-            intensity_aux = intensity_aux[~np.isnan(intensity_aux)]
-            intensity[n] = intensity_aux
-
-        fraction = sparse.csr_matrix((n_ev, n_cen))
-
-        event_name = []
-        for i in range(1,n_ev+1): event_name.append("event"+str(i))
-
-        event_date = []
-        for i in range(0,n_ev): event_date.append(df.loc[i, 'date'])
-
-        haz_type = df["haz_type"].values[0]
-
-        self.haz = Hazard(haz_type=haz_type,
-                    intensity=intensity,
-                    fraction=fraction,
-                    centroids=Centroids.from_lat_lon(lat, lon),  # default crs used
-                    units='impact',
-                    event_id=np.arange(n_ev, dtype=int),
-                    event_name=event_name,
-                    date=event_date,
-                    orig=np.zeros(n_ev, dtype=bool),
-                    frequency=np.ones(n_ev) / n_ev
-        )
-
-        self.haz.check()
 
     def HazardFromDF(self, df):
         """Define a hazard from dataframe
         """
 
-        print("===============\nDefining Hazard\n===============")
-
         lat = df["lat"].to_numpy()
         lat = lat[~np.isnan(lat)]
 
@@ -201,7 +96,7 @@ class ClimadaBR():
         # A INTENSIDADE DOS EVENTOS, NO PROJETO, SERA ESTIMADA POR VALORES DEFINIDOS
         # NAS NOTICIAS, COM APOIO DE LLM. AQUI, GERAMOS RANDOM.
         intensity = sparse.csr_matrix((n_ev, n_cen))
-        for n in progressBar(range(0, n_ev), prefix = 'Progress:', suffix = 'Complete', length = 50):
+        for n in progressBar(range(0, n_ev), prefix = 'Creating Hazard Object:', suffix = 'Complete', length = 50):
             intensity_aux = df["event"+str(n+1)].to_numpy()
             intensity_aux = intensity_aux[~np.isnan(intensity_aux)]
             intensity[n] = intensity_aux
@@ -229,6 +124,34 @@ class ClimadaBR():
         )
 
         self.haz.check()
+
+    def Set_Hazard(self, haz_file, haz : Hazard = None, regulated = False, use_severity_threshold = False, severity_threshold = 0.1, by_month_only = False, max_month = 12):
+        
+        print("===============\nDefining Hazard\n===============")
+        
+        self.haz = haz
+
+        if(haz == None):
+            if(haz_file != None):
+                if(regulated):
+                    self.haz_reg = HazReg(haz_file)
+                    haz_dt = self.haz_reg.get_df()
+                else:
+                    file_path = os.path.join(SYSTEM_DIR, haz_file)
+
+                    # Load dengue data
+                    haz_dt = pd.read_excel(file_path)
+
+                self.haz_dt = Conversor.convert_news_data(haz_dt, use_severity_threshold, severity_threshold, by_month_only, max_month, regulated)
+
+                self.HazardFromDF(self.haz_dt)
+
+    def Set_Datasus_Hazard(self, haz_file, by_month_only = True, max_month = 12, minimum_cases = 100, by_pop_size=False):
+        
+        print("===============\nDefining Hazard\n===============")
+        
+        self.haz_dt = Conversor.convert_datasus_data(haz_file, by_month_only, max_month, minimum_cases, by_pop_size)
+        self.HazardFromDF(self.haz_dt)
 
     def Plot_Haz_Centroids(self):
         self.haz.centroids.plot()
@@ -248,47 +171,10 @@ class ClimadaBR():
         self.impf_set.append(imp_fun)
         self.impf_set.check()
 
-    def DefineRandomImpactFuncSet(self):
-        """Define a ImpactFuncSet with a single random ImpactFunc with id = 'WEBSENSORS'
-        """
-
-        print("============================\nDefining Impact Function Set\n============================")
-
-        haz_type = "WS"
-        name = "WS Impact Function"
-        intensity_unit = "ws impact"
-
-        # provide RANDOM values for the hazard intensity, mdd, and paa
-        # AQUI TAMBEM TEMOS QUE DEFINIR COM BASE NOS EVENTOS E COM APOIO DE LLM
-
-        # PARAMETROS QUE IMPACT FUNCTION PRECISA
-        # intensity: Intensity values
-        # mdd: Mean damage (impact) degree for each intensity (numbers in [0,1])
-        # paa: Percentage of affected assets (exposures) for each intensity (numbers in [0,1])
-
-        intensity = np.linspace(0, 100, num=15)
-        mdd = np.concatenate((np.array([0]), np.sort(np.random.rand(14))), axis=0)
-        paa = np.concatenate((np.array([0]), np.sort(np.random.rand(14))), axis=0)
-
-        imp_fun = ImpactFunc(
-            id='WEBSENSORS',
-            name=name,
-            intensity_unit=intensity_unit,
-            haz_type=haz_type,
-            intensity=intensity,
-            mdd=mdd,
-            paa=paa,
-        )
-        self.impf_set = ImpactFuncSet()
-
-        self.AddImpactFunc(imp_fun)
-
     def ImpactFuncSetFromExcel(self, excel_file, data_dir=SYSTEM_DIR):
         """Define a ImpactFuncSet from a excel file
             Right now for excel with single ImpactFunc
         """
-
-        print("============================\nDefining Impact Function Set\n============================")
 
         self.impf_set = ImpactFuncSet()
 
@@ -326,6 +212,16 @@ class ClimadaBR():
 
             self.AddImpactFunc(imp_fun)
 
+    def Set_ImpFun(self, impctFunc_file, impf_set : ImpactFuncSet = None):
+
+        print("============================\nDefining Impact Function Set\n============================")
+        
+        self.impf_set = impf_set
+
+        if(impf_set == None):
+            if(impctFunc_file != None):
+                self.ImpactFuncSetFromExcel(impctFunc_file)
+
     def Plot_ImpFun(self):
         self.impf_set.plot()
 
@@ -333,17 +229,21 @@ class ClimadaBR():
         """Computes Impact based on haz, impf_set and exp_lp
         """
 
-        print("================\nComputing Impact\n================")
+        if(self.impf_set == None or self.haz == None):
+            print("ImpactFuncSet or Hazard were not setup, you can use Set_Hazard or Set_ImpFun to set them later to ComputeImpact.")
+        else:
 
-        # Get the hazard type and hazard id
-        [haz_type] = self.impf_set.get_hazard_types()
-        [haz_id] = self.impf_set.get_ids()[haz_type]
-        self.exp_lp.gdf.rename(columns={"impf_": "impf_" + haz_type}, inplace=True)
-        self.exp_lp.gdf['impf_' + haz_type] = haz_id
-        self.exp_lp.gdf
+            print("================\nComputing Impact\n================")
 
-        # Compute impact
-        self.imp = ImpactCalc(self.exp_lp, self.impf_set, self.haz).impact(save_mat=False)  # Do not save the results geographically resolved (only aggregate values)
+            # Get the hazard type and hazard id
+            [haz_type] = self.impf_set.get_hazard_types()
+            [haz_id] = self.impf_set.get_ids()[haz_type]
+            self.exp_lp.gdf.rename(columns={"impf_": "impf_" + haz_type}, inplace=True)
+            self.exp_lp.gdf['impf_' + haz_type] = haz_id
+            self.exp_lp.gdf
+
+            # Compute impact
+            self.imp = ImpactCalc(self.exp_lp, self.impf_set, self.haz).impact(save_mat=False)  # Do not save the results geographically resolved (only aggregate values)
 
     def Results(self):
         self.imp.plot_raster_eai_exposure()
@@ -363,33 +263,13 @@ class ClimadaBR():
                  exp_lp: LitPop = None,
                  impf_set: ImpactFuncSet = None,
                  haz: Hazard = None):
-        self.exp_lp = exp_lp
-        self.impf_set = impf_set
-        self.haz = haz
 
         self.by_month_only = by_month_only
 
-        if(exp_lp == None):
-            self.DefineExposures(['BRA'], 300, 'income_group')
+        self.Set_Exposure(exp_lp)
 
-        if(haz == None):
-            if(regulated):
-                self.haz_reg = HazReg(haz_file)
-                haz_dt = self.haz_reg.get_df()
-            else:
-                file_path = os.path.join(SYSTEM_DIR, haz_file)
+        self.Set_Hazard(haz_file, haz, regulated, use_severity_threshold, severity_threshold, by_month_only, max_month)
 
-                # Load dengue data
-                haz_dt = pd.read_excel(file_path)
-
-            if(regulated):
-                haz_dt = Conversor.convert_news_data(haz_dt, use_severity_threshold, severity_threshold, by_month_only, max_month, True)
-            else:
-                haz_dt = Conversor.convert_news_data(haz_dt, use_severity_threshold, severity_threshold, by_month_only, max_month)
-
-            self.HazardFromDF(haz_dt)
-
-        if(impf_set == None):
-            self.ImpactFuncSetFromExcel(impctFunc_file)
+        self.Set_ImpFun(impctFunc_file, impf_set)
 
         self.ComputeImpact()

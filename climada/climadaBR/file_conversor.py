@@ -1,17 +1,18 @@
 import pandas as pd
 from datetime import datetime
 from climada.util import *
+from climada.climadaBR.utils import progressBar
 import os
 
 class Conversor():
 
-    def convert_datasus_data(df, by_month_only = True, max_month = 12):
+    def convert_datasus_data(file_name, by_month_only, max_month, minimum_cases, by_pop_size):
 
         # Reading the dataframe
 
-        #file_path = os.path.join(SYSTEM_DIR, file_name)
+        file_path = os.path.join(SYSTEM_DIR, file_name)
 
-        #df = pd.read_excel(file_path)
+        df = pd.read_excel(file_path)
 
         # Taking the year for said cases
 
@@ -23,11 +24,57 @@ class Conversor():
 
         df = df.drop(["DT_NOTIFIC"], axis=1)
 
-        dff = df.drop(["month"], axis=1) # Saving in the dff the previous df to use the locations later
+        df = df.groupby(['ID_MUNICIP', 'month']).size().to_frame('cases').reset_index()
 
-        df = df.groupby(['ID_MUNICIP', 'month']).size().reset_index()
+        # Finding number of infected people in each case
 
-        print(df)
+        if(not by_pop_size):
+            m50 = df[df['cases'] < 50].index
+            m100 = df[(df['cases'] < 100) & (df['cases'] >= 50)].index
+            m200 = df[(df['cases'] < 200) & (df['cases'] >= 100)].index
+            m300 = df[(df['cases'] < 300) & (df['cases'] >= 200)].index
+            m400 = df[(df['cases'] < 400) & (df['cases'] >= 300)].index
+            m500 = df[(df['cases'] < 500) & (df['cases'] >= 400)].index
+            m1000 = df[(df['cases'] < 1000) & (df['cases'] >= 500)].index
+            m2500 = df[(df['cases'] < 2500) & (df['cases'] >= 1000)].index
+            m5000 = df[(df['cases'] < 5000) & (df['cases'] >= 2500)].index
+            m10000 = df[(df['cases'] < 10000) & (df['cases'] >= 5000)].index
+            ma10000 = df[df['cases'] >= 10000].index
+
+        # Taking out events without minimum cases
+
+        df = df.drop(df[df['cases'] < minimum_cases].index)
+
+        # Defining intensity of cases based on number of infected
+
+        if(not by_pop_size):
+            df.loc[m100, 'cases'] = 0.1
+            df.loc[m200, 'cases'] = 0.2
+            df.loc[m300, 'cases'] = 0.3
+            df.loc[m400, 'cases'] = 0.4
+            df.loc[m500, 'cases'] = 0.5
+            df.loc[m1000, 'cases'] = 0.6
+            df.loc[m2500, 'cases'] = 0.7
+            df.loc[m5000, 'cases'] = 0.8
+            df.loc[m10000, 'cases'] = 0.9
+            df.loc[ma10000, 'cases'] = 1
+
+        #print(len(m50))
+        #print(len(m100))
+        #print(len(m200))
+        #print(len(m300))
+        #print(len(m400))
+        #print(len(m500))
+        #print(len(m1000))
+        #print(len(m2500))
+        #print(len(m5000))
+        #print(len(m10000))
+        #print(len(ma10000))
+        #print(len(df))
+
+        # Saving in the dff the previous df to use the locations later
+
+        dff = df.drop(["month", "cases"], axis=1)
 
         # Organizing dff to have the locations without duplicates
 
@@ -48,22 +95,19 @@ class Conversor():
 
         # Creating events and adding them to the dff dataframe
 
-        for n in range(1, num+1):
+        for n in progressBar(range(1, num+1), prefix = 'Creating Hazard Dataframe:', suffix = 'Complete', length = 50):
             # Taking a single event and putting it in the dfmonth
 
             if(by_month_only):
-                dfmonth = df.loc[df['month'] == n]
+                dfevent = df.loc[df['month'] == n]
             else:
-                print("Loop 1 : ", n-1)
-
-                dfmonth = df.iloc[[n-1]]
+                dfevent = df.iloc[[n-1]]
 
             # Merge the event into dff
 
-            dff = dff.merge(dfmonth, on= 'ID_MUNICIP', how= 'left')
+            dff = dff.merge(dfevent, on= 'ID_MUNICIP', how= 'left')
 
-            dff.rename(columns = { '0_x' : "event" + str(n-1),
-                                '0_y' : "event" + str(n)}, 
+            dff.rename(columns = { 'cases' : "event" + str(n)}, 
                         inplace = True)
             
             # Taking hte date of hte current event
@@ -73,22 +117,6 @@ class Conversor():
             dff = dff.drop(['month'], axis=1)
 
         dff = dff.fillna(0)
-
-        if(num % 2 == 1):
-            dff = dff.rename(columns = {0 : 'event' + str(num)})
-
-        # Addind number of evens to the dff datafram
-
-        dff['n_events'] = num
-
-        # Joining the dates wiht the dff dataframe
-
-        if(len(df_date) > len(dff)):
-            dff = dff.join(df_date['date'], how='right')
-        else:
-            dff = dff.join(df_date['date'], how='left')
-
-        print(dff)
 
         # Reading municipios.csv file into a dataframe to take population size data
 
@@ -116,19 +144,29 @@ class Conversor():
 
         # Dividing number of cases by population size to obtain percentage of affected population, which will be our Intensity value
 
-        num = dff['n_events'].values[0]
-
         for n in range(0, num):
             dff['event' + str(n+1)] = dff['event' + str(n+1)].astype(float)
 
-        for n in range(0, num):
-            dff['event'+str(n+1)] = dff['event'+str(n+1)] / dff['pop_21']
+        if(by_pop_size):
+            for n in range(0, num):
+                dff['event'+str(n+1)] = dff['event'+str(n+1)] / dff['pop_21']
+
+        # Joining the dates wiht the dff dataframe
+
+        if(len(df_date) > len(dff)):
+            dff = dff.join(df_date['date'], how='right')
+        else:
+            dff = dff.join(df_date['date'], how='left')
+
+        # Addind number of evens to the dff datafram
+
+        dff['n_events'] = num
 
         #print(dff)
 
         return(dff)
 
-    def convert_news_data(df, use_severity_threshold = False, severity_threshold = 0.1, by_month_only = True, max_month = 12, regulated = False):
+    def convert_news_data(df, use_severity_threshold, severity_threshold, by_month_only, max_month, regulated):
 
         # Reading the dataframe from a file
 
@@ -201,7 +239,7 @@ class Conversor():
 
         # Creating events and adding them to the dfinal dataframe
 
-        for n in range(1, num+1):
+        for n in progressBar(range(1, num+1), prefix = 'Creating Hazard Dataframe:', suffix = 'Complete', length = 50):
             # Creating the event and putting it into dfmonth
 
             if(by_month_only):
@@ -213,8 +251,7 @@ class Conversor():
 
             dfinal = dfinal.merge(dfmonth, on= 'event_places', how= 'left')
 
-            dfinal.rename(columns = { 'Intensity of Event_x' : "event" + str(n-1),
-                                'Intensity of Event_y' : "event" + str(n)}, 
+            dfinal.rename(columns = { 'Intensity of Event' : "event" + str(n)}, 
                         inplace = True)
             
             # Taking the date of the current event
@@ -231,9 +268,6 @@ class Conversor():
             dfinal = dfinal.join(df_date['date'], how='right')
         else:
             dfinal = dfinal.join(df_date['date'], how='left')
-
-        if(num % 2 == 1):
-            dfinal = dfinal.rename(columns = {'Intensity of Event' : 'event' + str(num)})
 
         # Adding number of events to the dfinal dataframe
 
