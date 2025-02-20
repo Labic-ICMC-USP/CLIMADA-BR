@@ -26,8 +26,26 @@ import matplotlib.pyplot as plt
 from sklearn.manifold import TSNE
 
 class HazReg():
+    """
+    Class for hazard event regularization using Graph Neural Networks (GNNs) to improve event classification.
+    """
 
     def graphBuild(self, df, features):
+        """Constructs a graph representation of hazard events using nearest neighbors.
+        
+        Parameters
+        ----------
+        df : pandas.DataFrame
+            DataFrame containing hazard event descriptions.
+        features : numpy.ndarray
+            Numerical embeddings of event descriptions.
+        
+        Returns
+        -------
+        networkx.Graph
+            A graph where nodes represent events and edges indicate similarity.
+        """
+
         # Use Nearest Neighbors to find connections
         neighbors = NearestNeighbors(n_neighbors=5, metric='cosine').fit(features)
         distances, indices = neighbors.kneighbors(features)
@@ -42,6 +60,19 @@ class HazReg():
         return G
     
     def labelAssignment(self, df):
+        """Assigns labels to hazard events based on severity thresholds.
+        
+        Parameters
+        ----------
+        df : pandas.DataFrame
+            DataFrame containing hazard event severity values.
+        
+        Returns
+        -------
+        dict
+            A dictionary mapping event indices to severity labels.
+        """
+
         # Define thresholds for positive and negative labels (example, adjust intervals)
         high_severity_threshold = df['Severity of Event'].quantile(0.9)
         low_severity_threshold = df['Severity of Event'].quantile(0.1)
@@ -58,6 +89,25 @@ class HazReg():
         return labels
     
     def GCN_Classification(self, df, G, labels, features):
+        """Applies Graph Convolutional Networks (GCN) for hazard event classification.
+        
+        Parameters
+        ----------
+        df : pandas.DataFrame
+            DataFrame containing hazard event data.
+        G : networkx.Graph
+            Graph representation of events.
+        labels : dict
+            Mapping of event indices to severity labels.
+        features : numpy.ndarray
+            Numerical embeddings of event descriptions.
+        
+        Returns
+        -------
+        pandas.DataFrame
+            Updated DataFrame with GCN-generated severity scores.
+        """
+
         # Prepare adjacency matrix for the GCN
         adjacency = nx.adjacency_matrix(G)
         adjacency = sparse.csr_matrix(adjacency)
@@ -99,6 +149,8 @@ class HazReg():
         return df
     
     def Results_Plots(self):
+        """Generates t-SNE visualizations before and after severity classification adjustment."""
+
         # Extract feature vectors and severity values
         features_before = np.vstack(self.new_df['features'].values)
         severity_values = self.new_df['Severity of Event'].values
@@ -134,6 +186,13 @@ class HazReg():
         plt.show()
 
     def __init__(self, file_name):
+        """Initialize the HazReg class and process hazard event classification.
+        
+        Parameters
+        ----------
+        file_name : str
+            Path to the hazard event dataset file.
+        """
 
         print("=====================================\nUsing GCN to better classify Severity\n=====================================")
 
@@ -158,5 +217,7 @@ class HazReg():
         self.new_df = self.GCN_Classification(df, G, labels, features)
 
     def get_df(self):
+        """Returns the processed DataFrame with updated severity scores."""
+
         return self.new_df
         

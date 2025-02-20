@@ -5,8 +5,33 @@ from climada.climadaBR.utils import progressBar
 import os
 
 class Conversor():
+    """
+    Utility class for converting various hazard data formats into a structured format
+    compatible with ClimadaBR.
+    
+    """
 
     def convert_datasus_data(file_name, by_month_only, max_month, minimum_cases, by_pop_size):
+        """Convert Datasus health-related hazard data into a structured hazard format.
+        
+        Parameters
+        ----------
+        file_name : str
+            Path to the Datasus data file.
+        by_month_only : bool
+            Whether to group events by month only.
+        max_month : int
+            Maximum month value for filtering events.
+        minimum_cases : int
+            Minimum number of cases required for hazard inclusion.
+        by_pop_size : bool
+            Whether to normalize hazard data by population size.
+
+        Returns
+        -------
+        pandas.DataFrame
+            A structured DataFrame containing hazard event data.
+        """
 
         # Reading the dataframe
 
@@ -58,19 +83,6 @@ class Conversor():
             df.loc[m5000, 'cases'] = 0.8
             df.loc[m10000, 'cases'] = 0.9
             df.loc[ma10000, 'cases'] = 1
-
-        #print(len(m50))
-        #print(len(m100))
-        #print(len(m200))
-        #print(len(m300))
-        #print(len(m400))
-        #print(len(m500))
-        #print(len(m1000))
-        #print(len(m2500))
-        #print(len(m5000))
-        #print(len(m10000))
-        #print(len(ma10000))
-        #print(len(df))
 
         # Saving in the dff the previous df to use the locations later
 
@@ -167,6 +179,28 @@ class Conversor():
         return(dff)
 
     def convert_news_data(df, use_severity_threshold, severity_threshold, by_month_only, max_month, regulated):
+        """Convert hazard event data extracted from news sources into a structured hazard format.
+        
+        Parameters
+        ----------
+        df : pandas.DataFrame
+            DataFrame containing hazard event data extracted from news sources.
+        use_severity_threshold : bool
+            Whether to filter events below a given severity threshold.
+        severity_threshold : float
+            The severity threshold used for filtering events.
+        by_month_only : bool
+            Whether to group events by month only.
+        max_month : int
+            Maximum month value for filtering events.
+        regulated : bool
+            Whether to apply hazard regularization.
+        
+        Returns
+        -------
+        pandas.DataFrame
+            A structured DataFrame containing hazard event data.
+        """
 
         # Reading the dataframe from a file
 
