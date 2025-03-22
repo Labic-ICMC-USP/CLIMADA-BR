@@ -304,6 +304,12 @@ class ClimadaBR():
 
         self.impf_set.plot()
 
+    def Plot_HazReg(self):
+        self.haz_reg.Results_Plots()
+
+    def Dataframe_Print(self):
+        print(self.haz_dt)
+
     def ComputeImpact(self):
         """Computes Impact based on haz, impf_set and exp_lp
         """

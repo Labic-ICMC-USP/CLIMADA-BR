@@ -4,7 +4,7 @@ This README.md contains all the documentation needed for running ClimadaBR. The 
 
 # FILES
 
-The data needed is taken from 3 main sources and are related to the following files / foulder:
+The data needed for running [ClimadaBR Tutorial](https://github.com/Labic-ICMC-USP/CLIMADA-BR/blob/main/doc/tutorial/Tutorial_ClimadaBR.ipynb) is taken from 3 main sources and are related to the following files / foulder:
 - gpw-v4-population-count-rev11_2020_30_sec_tif foulder
 - dengue_hazzards_news.xlsx
 - DengueFunc.xlsx
@@ -39,9 +39,9 @@ If you want know more about Impact Functions see the [Impact tutorial](climada_e
 
 The SYSTEM_DIR is the folder "~/climada/data", copy the files into the folder. If an error of file not found show up when running one of the tutorials just check the correct folder in the error message.
 
-# Extra ...
+# Extra Dengue Tutorial
 
-During development we runned some simulations using datasus data, if you wish to see those simulations you can access the tutorial: ... . This research data was used as our goal during the process, our object was to make the data taken from articles generate similar results to this research data. The next section will tell you about the files used and how to acquire them.
+During development we runned some simulations using datasus data, if you wish to see those simulations you can access the [Dengue Tutorial](https://github.com/Labic-ICMC-USP/CLIMADA-BR/blob/main/doc/tutorial/Tutorial_Dengue.ipynb) . This research data was used as our goal during the process, our objective was to make the data taken from articles generate similar results to this research data. The next section will tell you about the files used and how to acquire them.
 
 # OTHER FILES
 
