@@ -28,17 +28,75 @@ First, we will conduct rigorous testing and validation of the CLIMADA-BR model, 
 
 Once validated, the CLIMADA-BR framework will be disseminated through workshops, training sessions, and online platforms, targeting decision-makers, researchers, and the public. An open-source release of the model will be pivotal to encourage broader adoption and continuous improvement. To maximize the project's impact, we will establish partnerships with local communities, leveraging their knowledge and contributing to the model's enrichment.
 
+## Descrição dos Módulos do Climada-BR
+
+A classe `ClimadaBR` abrange todo o processo de armazenamento, processamento de dados e geração de resultados por meio de seus métodos. Ao instanciá-la, dois atributos obrigatórios devem ser fornecidos: o nome do arquivo contendo os dados de *hazard* (gerados por uma LLM) e o nome do arquivo com a *função de impacto* (criada com base em estudos que relacionam a intensidade dos eventos aos impactos causados). Além desses, diversos parâmetros secundários podem ser fornecidos para configurar o processamento dos dados.
+
+Para exemplificação, apresentamos os resultados obtidos a partir de dois arquivos: um contendo dados sobre a dengue, processados por uma LLM a partir de notícias sobre o tema, e outro com a função de impacto baseada em um estudo da FIEMG, que correlacionava o número de casos de dengue com perdas econômicas — sejam estas decorrentes de tratamentos ou de afastamentos laborais.
+
+![Arquitetura CLIMADA-BR](images/arquitetura.png)
+
+### Hazard
+
+O módulo *Hazard* armazena os dados dos fenômenos climáticos analisados. No Climada-BR, a interação com esse módulo se dá, principalmente, durante a instanciação do objeto ou via métodos como `ClimadaBR.Set_Hazard`.
+
+No caso dos dados sobre dengue extraídos de notícias de 2023 por uma LLM, o formato adotado foi o de tabela, com linhas representando eventos e colunas contendo coordenadas, datas, descrições, severidade e intensidade:
+
+![Tabela Hazard](images/arqHazard.png)
+
+Essas tabelas são processadas para extrair e organizar as informações relevantes. Opcionalmente, uma etapa adicional pode ser realizada: o ajuste por uma GNN (Rede Neural de Grafo), mais especificamente uma GCN (Rede Convolucional de Grafo). A GCN é treinada com eventos de severidade extrema (muito alta ou muito baixa), utilizando como *features* uma codificação das descrições dos eventos e, como *labels*, os valores de severidade (1 para alta, 0 para baixa). Após o treinamento, o modelo define a severidade dos demais eventos, aumentando a coerência dos dados — visto que a LLM por classificar eventos de forma isolada pode ser incoerente em alguns casos.
+
+O impacto desse ajuste pode ser visualizado com métodos como `ClimadaBR.Plot_HazReg`, que revela as alterações nos valores de severidade:
+
+![Ajuste da GNN](images/GNN.png)
+
+Depois de armazenadas as informações do *Hazard*, alguns métodos também podem ser utilizados para inspecionar esses dados, como o `ClimadaBR.Plot_Haz_Centroids`, que mostra as coordenadas de cada evento:
+
+![Coordenadas dos Eventos](images/centroids.png)
+
+E o `ClimadaBR.Dataframe_Print`, que exibe a estrutura dos dados armazenados, com linhas representando localizações e colunas contendo valores como latitude, longitude e intensidade de cada evento nessas coordenadas (observando-se que a maioria dos valores de intensidade é zero, pois cada evento afeta poucos locais, e a tabela contém 302 localizações):
+
+![Dataframe Estruturado](images/HazDataframe.png)
+
+### Entity
+
+O módulo *Entity* é composto por dois elementos principais: *Exposure* (Área Afetada) e *Impact Function* (Função de Impacto).
+
+#### Exposure
+
+O módulo *Exposure* armazena informações sobre as áreas impactadas pelo fenômeno climático, podendo representar diversos parâmetros, como população, PIB, entre outros. No Climada-BR, utilizamos um método existente no CLIMADA que faz uso do arquivo `gpw_v4_population_count_rev11_2020_30_sec.tif`, que modela a distribuição populacional global em células de aproximadamente 1 km. Os parâmetros utilizados foram: país = Brasil, grade = 300 segundos de arco e valor socioeconômico = `'income_group'`, sendo que `'income_group'` representa o PIB multiplicado pelo grupo de renda do país (valores de grupo de renda vão de 1 a 4, sendo 1 igual a baixa e 4 a alta renda).
+
+A visualização dos dados de *Exposure* pode ser feita com o método `ClimadaBR.Plot_Exposure`:
+
+![Área Afetada](images/exposure.png)
+
+#### Impact Function
+
+A *Impact Function* é uma função que correlaciona a intensidade dos eventos com os valores de PAA (Porcentagem de Ativos Afetados) e MDD (Grau Médio de Dano). Essa função é definida por vários pontos que representam essa relação. No nosso projeto, ela foi construída de modo a aproximar os resultados de um conjunto de dados obtido do DATASUS, referente aos cinco primeiros meses de 2023, com os valores de dano financeiro propostos por um estudo da FIEMG, o qual relacionava 4,2 milhões de casos de dengue a um impacto financeiro de R$ 20,3 bilhões. No contexto do projeto, nosso objetivo foi adaptar a função de impacto para que resultasse em um impacto estimado de aproximadamente 900 milhões de dólares, valor correspondente à quantidade de infectados representada pelos dados do DATASUS.
+
+Utilizamos, então, essa função previamente adaptada aos dados do DATASUS nos dados provenientes da análise de notícias realizada pela LLM. Caso os valores não se distanciem significativamente do esperado — como ocorreu —, isso serve como indicativo tanto da eficácia do projeto quanto da validade da função de impacto proposta. A *Impact Function* é fornecida ao objeto `ClimadaBR` durante sua instanciação ou por meio do método `ClimadaBR.Set_ImpFun`; em ambos os casos, é informado o nome de um arquivo contendo uma tabela com os pontos que definem a função, com colunas representando Intensidade, PAA e MDD.
+
+Para visualizar a função, utiliza-se o método `ClimadaBR.Plot_ImpFun`, que gera o gráfico a seguir. O valor MDR (Taxa Média de Dano) é obtido pela multiplicação de MDD por PAA:
+
+![Função de Impacto](images/ImpFun.png)
+
+### Engine
+
+O módulo *Engine*, ou *Impacto* (no CLIMADA original, a *Engine* engloba diversos submódulos; no Climada-BR, no entanto, ela foi restringida apenas ao módulo de *Impacto*, motivo pelo qual os termos são tratados como equivalentes), difere dos demais por armazenar os resultados dos cálculos, e não os dados de entrada. Ele é definido por meio do método `ClimadaBR.ComputeImpact`, que utiliza os dados previamente armazenados nos outros módulos para gerar um objeto de impacto. Esse objeto, ao ser criado, já executa os cálculos necessários para determinar diversos indicadores de impacto. Com o uso do método `ClimadaBR.Results`, obtém-se uma saída contendo um gráfico semelhante ao mostrado abaixo, além dos resultados em formato textual. No conjunto de dados utilizado, o valor da propriedade `aai_agg` (Impacto Médio Agregado) foi de aproximadamente 1,1 bilhão de dólares, representando o impacto médio anual:
+
+![Impacto Computado](images/resultsIMG.png)
+
 ## Updates
 
 ### Minimalistic Example
 
-At [CLIMADA-BR/doc/tutorial/TUTORIAL_BASE_CLIMADA_BR.ipynb](https://github.com/Labic-ICMC-USP/CLIMADA-BR/blob/main/doc/tutorial/TUTORIAL_BASE_CLIMADA_BR.ipynb) we have a minimalistic example of how CLIMADA works through our ClimadaBR API. You can also check Climada's official tutorials to learn more, you can start with [CLIMADA-BR/doc/tutorial/1_main_climada.ipynb](https://github.com/Labic-ICMC-USP/CLIMADA-BR/blob/main/doc/tutorial/1_main_climada.ipynb).
+At [CLIMADA-BR/doc/tutorial/TUTORIAL_BASE_CLIMADA_BR.ipynb](https://github.com/Labic-ICMC-USP/CLIMADA-BR/blob/main/doc/tutorial/TUTORIAL_BASE_CLIMADA_BR.ipynb) we have a minimalistic example of how CLIMADA works through our ClimadaBR Class. You can also check Climada's official tutorials to learn more, you can start with [CLIMADA-BR/doc/tutorial/1_main_climada.ipynb](https://github.com/Labic-ICMC-USP/CLIMADA-BR/blob/main/doc/tutorial/1_main_climada.ipynb).
 
 To run every ClimadaBR tutorial in your machine you need to follow the installation guide below and also download the [gpw_v4_population_count_rev11_2020_30_sec.tif](https://drive.google.com/uc?id=1-3Skg9WOBDq8AyFV_WIdVsFDXG40qKCv&confirm=t&uuid=19db6326-d640-4af6-8fbf-51e7e479a338). This folder, along with some other files that are in the [CLIMADA-BR/doc/ClimadaBR_docs](https://github.com/Labic-ICMC-USP/CLIMADA-BR/blob/main/doc/ClimadaBR_docs) folder, need to be put in the SYSTEM_DIR of climada. Check out this README file [CLIMADA-BR/doc/ClimadaBR_docs/README.md](https://github.com/Labic-ICMC-USP/CLIMADA-BR/blob/main/doc/ClimadaBR_docs/README.md) to do it correctly.
 
-### Climada-BR API
+### Climada-BR Class
 
-At CLIMADA-BR/climada/ we have our API climadaBR which encapsulates the main functions used on our project, climadaBR has 5 python files: an 'init.py', 'climadaBR_def.py' (where the user can define the climadaBR object and interact with it), 'file_conversor.py' (which takes an file and organizes the data into a dataframe that can be passed to Climada to define a hazard), hazardRegularization.py (contain the process of using a GCN to regularize part of the data of some hazard file) and utils.py (which has some non excential tools used in the project).
+At CLIMADA-BR/climada/ we have our class climadaBR which encapsulates the main functions used on our project, climadaBR has 5 python files: an 'init.py', 'climadaBR_def.py' (where the user can define the climadaBR object and interact with it), 'file_conversor.py' (which takes an file and organizes the data into a dataframe that can be passed to Climada to define a hazard), hazardRegularization.py (contain the process of using a GCN to regularize part of the data of some hazard file) and utils.py (which has some non excential tools used in the project).
 
 The main functions a user will need to use climada are:
 
@@ -51,7 +109,7 @@ The main functions a user will need to use climada are:
 
 This tutorial can show you how to use each of them [CLIMADA-BR/doc/tutorial/Tutorial_ClimadaBR.ipynb](https://github.com/Labic-ICMC-USP/CLIMADA-BR/blob/main/doc/tutorial/Tutorial_ClimadaBR.ipynb).
 
-If you want to see the other functions you can see the python files or our other tutorials to learn about them, but they probably are not necessary for you to use the application.
+If you want to see the other functions you can see the python files or our other tutorials to learn about them, but they are probably not necessary for you to use the application.
 
 ### DENGUE Hazard
 
