@@ -117,11 +117,19 @@ class ClimadaBR():
 
         # A INTENSIDADE DOS EVENTOS, NO PROJETO, SERA ESTIMADA POR VALORES DEFINIDOS
         # NAS NOTICIAS, COM APOIO DE LLM. AQUI, GERAMOS RANDOM.
-        intensity = sparse.csr_matrix((n_ev, n_cen))
-        for n in progressBar(range(0, n_ev), prefix = 'Creating Hazard Object:', suffix = 'Complete', length = 50):
-            intensity_aux = df["event"+str(n+1)].to_numpy()
+        intensity_rows = []
+
+        for n in progressBar(
+            range(0, n_ev),
+            prefix='Creating Hazard Object:',
+            suffix='Complete',
+            length=50
+        ):
+            intensity_aux = df["event" + str(n + 1)].to_numpy()
             intensity_aux = intensity_aux[~np.isnan(intensity_aux)]
-            intensity[n] = intensity_aux
+            intensity_rows.append(intensity_aux)
+
+        intensity = sparse.csr_matrix(np.vstack(intensity_rows))
 
         fraction = sparse.csr_matrix((n_ev, n_cen))
 
@@ -136,7 +144,7 @@ class ClimadaBR():
         self.haz = Hazard(haz_type=haz_type,
                     intensity=intensity,
                     fraction=fraction,
-                    centroids=Centroids.from_lat_lon(lat, lon),  # default crs used
+                    centroids=Centroids(lat=lat, lon=lon),
                     units='impact',
                     event_id=np.arange(n_ev, dtype=int),
                     event_name=event_name,
