@@ -23,7 +23,7 @@
 * Emanuel Schmid
 * Chris Fairless
 * Jan Wüthrich
-* Zélie Standhanske
+* Zélie Stalhandske
 * Yue Yu
 * Lukas Riedel
 * Raphael Portmann
@@ -36,3 +36,4 @@
 * Luca Severino
 * Samuel Juhel
 * Valentin Gebhart
+* Dahyann Araya

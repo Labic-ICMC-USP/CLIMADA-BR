@@ -19,8 +19,8 @@ Tests for calibration module
 """
 
 import unittest
-from unittest.mock import patch, MagicMock, call
-from typing import Optional, List
+from typing import List, Optional
+from unittest.mock import MagicMock, call, patch
 
 import numpy as np
 import numpy.testing as npt
@@ -29,7 +29,7 @@ from scipy.optimize import OptimizeResult
 
 from climada.util.calibrate import Input, ScipyMinimizeOptimizer
 
-from .test_base import hazard, exposure
+from .test_base import exposure, hazard
 
 
 class TestScipyMinimizeOptimizer(unittest.TestCase):
@@ -63,7 +63,7 @@ class TestScipyMinimizeOptimizer(unittest.TestCase):
         # Call 'run', make sure that 'minimize' is only with these parameters
         params_init = {"x_2": 1, "x 1": 2, "x_3": 3}  # NOTE: Also works with whitespace
         with patch.object(self.input, "impact_to_aligned_df") as align:
-            align.return_value = (None, None)
+            align.return_value = (pd.DataFrame(), pd.DataFrame())
             self.optimizer.run(params_init=params_init, options={"maxiter": 1})
 
         # Check call to '_kwargs_to_impact_func_creator'

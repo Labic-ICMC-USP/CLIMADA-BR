@@ -19,25 +19,25 @@ Tests for calibration module
 """
 
 import unittest
-from unittest.mock import patch, MagicMock
-from tempfile import TemporaryDirectory
 from pathlib import Path
+from tempfile import TemporaryDirectory
+from unittest.mock import MagicMock, patch
 
 import numpy as np
 import numpy.testing as npt
 import pandas as pd
 from bayes_opt import BayesianOptimization, Events
-from scipy.optimize import NonlinearConstraint
 from matplotlib.axes import Axes
+from scipy.optimize import NonlinearConstraint
 
-from climada.util.calibrate import Input, BayesianOptimizer, BayesianOptimizerController
+from climada.util.calibrate import BayesianOptimizer, BayesianOptimizerController, Input
 from climada.util.calibrate.bayesian_optimizer import (
+    BayesianOptimizerOutput,
     Improvement,
     StopEarly,
-    BayesianOptimizerOutput,
 )
 
-from .test_base import hazard, exposure
+from .test_base import exposure, hazard
 
 
 def input():
@@ -94,13 +94,9 @@ class TestBayesianOptimizerController(unittest.TestCase):
         )
         result = contr.optimizer_params()
 
-        self.assertDictContainsSubset(
-            {
-                "init_points": 1,
-                "n_iter": 2,
-            },
-            result,
-        )
+        self.assertEqual(result.get("init_points"), 1)
+        self.assertEqual(result.get("n_iter"), 2)
+
         util_func = result["acquisition_function"]
         self.assertEqual(util_func.kappa, 3)
         self.assertEqual(util_func._kappa_decay, contr._calc_kappa_decay())
@@ -320,10 +316,10 @@ class TestBayesianOptimizer(unittest.TestCase):
 
         # Call 'run'
         with patch.object(self.input, "impact_to_aligned_df") as align:
-            align.return_value = (None, None)
-            self.optimizer.run(self.controller)
+            align.return_value = (pd.DataFrame(), pd.DataFrame())
+            self.optimizer.run(controller=self.controller)
 
-        # Check call to '_kwargs_to_impact_func_gen'
+        # Check call to '_kwargs_to_impact_func_creator'
         call_args = self.input.impact_func_creator.call_args_list
         self.assertEqual(len(call_args), 3)
         for args in call_args:
@@ -344,8 +340,8 @@ class TestBayesianOptimizer(unittest.TestCase):
 
         # Call 'run'
         with patch.object(self.input, "impact_to_aligned_df") as align:
-            align.return_value = (None, None)
-            output = self.optimizer.run(self.controller)
+            align.return_value = (pd.DataFrame(), pd.DataFrame())
+            output = self.optimizer.run(controller=self.controller)
 
         # Check target space
         npt.assert_array_equal(output.p_space.target, [-1.0, 1.0])

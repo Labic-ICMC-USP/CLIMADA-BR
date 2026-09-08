@@ -18,19 +18,22 @@ with CLIMADA. If not, see <https://www.gnu.org/licenses/>.
 
 Import data from Global Population of the World (GPW) datasets
 """
+
 import logging
 
-import rasterio
 import numpy as np
+import rasterio
+from affine import Affine
 
-from climada.util.constants import SYSTEM_DIR
 from climada import CONFIG
+from climada.util.constants import SYSTEM_DIR
 
 LOGGER = logging.getLogger(__name__)
 
 
-def load_gpw_pop_shape(geometry, reference_year, gpw_version,
-                       data_dir=SYSTEM_DIR, layer=0, verbose=True):
+def load_gpw_pop_shape(
+    geometry, reference_year, gpw_version, data_dir=SYSTEM_DIR, layer=0, verbose=True
+):
     """Read gridded population data from TIFF and crop to given shape(s).
 
     Note: A (free) NASA Earthdata login is necessary to download the data.
@@ -73,22 +76,29 @@ def load_gpw_pop_shape(geometry, reference_year, gpw_version,
     """
 
     # check whether GPW input file exists and get file path
-    file_path = get_gpw_file_path(gpw_version, reference_year, data_dir=data_dir, verbose=verbose)
+    file_path = get_gpw_file_path(
+        gpw_version, reference_year, data_dir=data_dir, verbose=verbose
+    )
 
     # open TIFF and extract cropped data from input file:
-    with rasterio.open(file_path, 'r') as src:
+    with rasterio.open(file_path, "r") as src:
         global_transform = src.transform
-        pop_data, out_transform = rasterio.mask.mask(src, [geometry], crop=True, nodata=0)
+        pop_data, out_transform = rasterio.mask.mask(
+            src, [geometry], crop=True, nodata=0
+        )
 
         # extract and update meta data for cropped data and close src:
         meta = src.meta
-        meta.update({
-            "driver": "GTiff",
-            "height": pop_data.shape[1],
-            "width": pop_data.shape[2],
-            "transform": out_transform,
-        })
-    return pop_data[layer,:,:], meta, global_transform
+        meta.update(
+            {
+                "driver": "GTiff",
+                "height": pop_data.shape[1],
+                "width": pop_data.shape[2],
+                "transform": out_transform,
+            }
+        )
+    return pop_data[layer, :, :], meta, global_transform
+
 
 def get_gpw_file_path(gpw_version, reference_year, data_dir=None, verbose=True):
     """Check available GPW population data versions and year closest to
@@ -118,24 +128,36 @@ def get_gpw_file_path(gpw_version, reference_year, data_dir=None, verbose=True):
         data_dir = SYSTEM_DIR
 
     # get years available in GPW data from CONFIG and convert to array:
-    years_available = np.array([
-        year.int() for year in CONFIG.exposures.litpop.gpw_population.years_available.list()
-    ])
+    years_available = np.array(
+        [
+            year.int()
+            for year in CONFIG.exposures.litpop.gpw_population.years_available.list()
+        ]
+    )
 
     # find closest year to reference_year with data available:
     year = years_available[np.abs(years_available - reference_year).argmin()]
     if verbose and year != reference_year:
-        LOGGER.warning('Reference year: %i. Using nearest available year for GPW data: %i',
-                       reference_year, year)
+        LOGGER.warning(
+            "Reference year: %i. Using nearest available year for GPW data: %i",
+            reference_year,
+            year,
+        )
 
     # check if file is available for given GPW version, construct GPW file path from CONFIG:
     # if available, return full path to file:
-    gpw_dirname = CONFIG.exposures.litpop.gpw_population.dirname_gpw.str() % (gpw_version, year)
-    gpw_filename = CONFIG.exposures.litpop.gpw_population.filename_gpw.str() % (gpw_version, year)
+    gpw_dirname = CONFIG.exposures.litpop.gpw_population.dirname_gpw.str() % (
+        gpw_version,
+        year,
+    )
+    gpw_filename = CONFIG.exposures.litpop.gpw_population.filename_gpw.str() % (
+        gpw_version,
+        year,
+    )
     for file_path in [data_dir / gpw_filename, data_dir / gpw_dirname / gpw_filename]:
         if file_path.is_file():
             if verbose:
-                LOGGER.info('GPW Version v4.%2i', gpw_version)
+                LOGGER.info("GPW Version v4.%2i", gpw_version)
             return file_path
 
     # if the file was not found, an exception is raised with instructions on how to obtain it
@@ -146,7 +168,57 @@ def get_gpw_file_path(gpw_version, reference_year, data_dir=None, verbose=True):
         f"{gpw_dirname}.zip"
     )
     raise FileNotFoundError(
-        f'The file {file_path} could not be found. Please download the file first or choose a'
-        f' different folder. The data can be downloaded from {sedac_browse_url}, e.g.,'
-        f' {sedac_file_url} (Free NASA Earthdata login required).'
+        f"The file {file_path} could not be found. Please download the file first or choose a"
+        f" different folder. The data can be downloaded from {sedac_browse_url}, e.g.,"
+        f" {sedac_file_url} (Free NASA Earthdata login required)."
     )
+
+
+def grid_aligned_with_gpw(reference_year, gpw_version, res_arcsec, data_dir=SYSTEM_DIR):
+    """
+    Defines a grid based on population metadata.
+
+    Parameters
+    ----------
+    reference_year : int
+        The reference year for population and nightlight data.
+    gpw_version : int
+        Version number of GPW population data.
+    res_arcsec : int or None
+        Desired resolution in arcseconds. If None, aligns to population grid.
+    data_dir : str
+        Path to input data directory.
+
+    Returns
+    -------
+    grid : dict
+        A dictionary containing grid metadata, following the raster grid
+        specification.
+    """
+    res_deg = res_arcsec / 3600
+
+    file_path = get_gpw_file_path(
+        gpw_version, reference_year, data_dir=data_dir, verbose=False
+    )
+    with rasterio.open(file_path, "r") as src:
+        global_crs = src.crs
+        gpw_transform = src.transform
+    # Align grid resolution with GPW dataset
+    aligned_lon_min = -180 + (round((gpw_transform[2] - (-180)) / res_deg) * res_deg)
+    aligned_lat_max = 90 - (round((90 - gpw_transform[5]) / res_deg) * res_deg)
+
+    global_transform = Affine(res_deg, 0, aligned_lon_min, 0, -res_deg, aligned_lat_max)
+
+    global_width = round(360 / res_deg)
+    global_height = round(180 / res_deg)
+
+    # Define the target grid using the computed values
+    return {
+        "driver": "GTiff",
+        "dtype": "float32",
+        "nodata": None,
+        "crs": global_crs,
+        "width": global_width,
+        "height": global_height,
+        "transform": global_transform,
+    }

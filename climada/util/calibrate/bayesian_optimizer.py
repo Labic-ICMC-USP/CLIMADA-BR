@@ -18,26 +18,25 @@ with CLIMADA. If not, see <https://www.gnu.org/licenses/>.
 Calibration with Bayesian Optimization
 """
 
-from dataclasses import dataclass, InitVar, field
-from typing import Mapping, Optional, Any, Union, List, Tuple
-from numbers import Number
-from itertools import combinations, repeat
-from collections import deque, namedtuple
 import logging
+from collections import deque, namedtuple
+from dataclasses import InitVar, dataclass, field
+from itertools import combinations, repeat
+from numbers import Number
 from pathlib import Path
+from typing import Any, List, Mapping, Optional, Tuple, Union
 
-import pandas as pd
-import numpy as np
 import matplotlib as mpl
-import matplotlib.pyplot as plt
 import matplotlib.axes as maxes
 import matplotlib.patches as mpatches
+import matplotlib.pyplot as plt
 import matplotlib.ticker as mticker
-from bayes_opt import BayesianOptimization, Events, UtilityFunction, ScreenLogger
+import numpy as np
+import pandas as pd
+from bayes_opt import BayesianOptimization, Events, ScreenLogger, UtilityFunction
 from bayes_opt.target_space import TargetSpace
 
-from .base import Input, Output, Optimizer, OutputEvaluator
-
+from .base import Input, Optimizer, Output, OutputEvaluator
 
 LOGGER = logging.getLogger(__name__)
 
@@ -617,11 +616,13 @@ class BayesianOptimizer(Optimizer):
             **bayes_opt_kwds,
         )
 
-    def _target_func(self, data: pd.DataFrame, predicted: pd.DataFrame) -> Number:
+    def _target_func(
+        self, data: np.ndarray, predicted: np.ndarray, weights: np.ndarray | None
+    ) -> Number:
         """Invert the cost function because BayesianOptimization maximizes the target"""
-        return -self.input.cost_func(data, predicted)
+        return -self.input.cost_func(data, predicted, weights)
 
-    def run(self, controller: BayesianOptimizerController) -> BayesianOptimizerOutput:
+    def run(self, **opt_kwargs) -> BayesianOptimizerOutput:
         """Execute the optimization
 
         ``BayesianOptimization`` *maximizes* a target function. Therefore, this class
@@ -632,8 +633,10 @@ class BayesianOptimizer(Optimizer):
         ----------
         controller : BayesianOptimizerController
             The controller instance used to set the optimization iteration parameters.
-        opt_kwargs
-            Further keyword arguments passed to ``BayesianOptimization.maximize``.
+        kwargs
+            Further keyword arguments passed to ``BayesianOptimization.maximize``. Note
+            that some arguments are also provided by
+            :py:meth:`BayesianOptimizerController.optimizer_params`.
 
         Returns
         -------
@@ -641,6 +644,14 @@ class BayesianOptimizer(Optimizer):
             Optimization output. :py:attr:`BayesianOptimizerOutput.p_space` stores data
             on the sampled parameter space.
         """
+        # Take the controller
+        try:
+            controller = opt_kwargs.pop("controller")
+        except KeyError as err:
+            raise RuntimeError(
+                "BayesianOptimizer.run requires 'controller' as keyword argument"
+            ) from err
+
         # Register the controller
         for event in (Events.OPTIMIZATION_STEP, Events.OPTIMIZATION_END):
             self.optimizer.subscribe(event, controller)
@@ -661,7 +672,7 @@ class BayesianOptimizer(Optimizer):
         while controller.iterations < controller.max_iterations:
             try:
                 LOGGER.info(f"Optimization iteration: {controller.iterations}")
-                self.optimizer.maximize(**controller.optimizer_params())
+                self.optimizer.maximize(**controller.optimizer_params(), **opt_kwargs)
             except StopEarly:
                 # Start a new iteration
                 continue

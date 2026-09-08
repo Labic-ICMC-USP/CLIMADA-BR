@@ -24,6 +24,12 @@ from .bayesian_optimizer import (
     BayesianOptimizerController,
     BayesianOptimizerOutput,
     BayesianOptimizerOutputEvaluator,
-    select_best
+    select_best,
+)
+from .cost_func import mse, msle
+from .ensemble import (
+    AverageEnsembleOptimizer,
+    EnsembleOptimizerOutput,
+    TragedyEnsembleOptimizer,
 )
 from .scipy_optimizer import ScipyMinimizeOptimizer

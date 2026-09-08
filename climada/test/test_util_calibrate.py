@@ -20,25 +20,23 @@ Integration tests for calibration module
 
 import unittest
 
-import pandas as pd
 import numpy as np
 import numpy.testing as npt
+import pandas as pd
+from matplotlib.axes import Axes
 from scipy.optimize import NonlinearConstraint
 from sklearn.metrics import mean_squared_error
-from matplotlib.axes import Axes
 
-from climada.entity import ImpactFuncSet, ImpactFunc
-
+from climada.entity import ImpactFunc, ImpactFuncSet
 from climada.util.calibrate import (
-    Input,
-    ScipyMinimizeOptimizer,
     BayesianOptimizer,
-    OutputEvaluator,
-    BayesianOptimizerOutputEvaluator,
     BayesianOptimizerController,
+    BayesianOptimizerOutputEvaluator,
+    Input,
+    OutputEvaluator,
+    ScipyMinimizeOptimizer,
 )
-
-from climada.util.calibrate.test.test_base import hazard, exposure
+from climada.util.calibrate.test.test_base import exposure, hazard
 
 
 class TestScipyMinimizeOptimizer(unittest.TestCase):
@@ -69,12 +67,12 @@ class TestScipyMinimizeOptimizer(unittest.TestCase):
             ]
         )
         self.input = Input(
-            self.hazard,
-            self.exposure,
-            self.data,
-            self.impact_func_creator,
-            self.impact_to_dataframe,
-            mean_squared_error,
+            hazard=self.hazard,
+            exposure=self.exposure,
+            data=self.data,
+            impact_func_creator=self.impact_func_creator,
+            impact_to_dataframe=self.impact_to_dataframe,
+            cost_func=lambda x, y, w: mean_squared_error(x, y, sample_weight=w),
         )
 
     def test_single(self):
@@ -163,12 +161,12 @@ class TestBayesianOptimizer(unittest.TestCase):
             ]
         )
         self.input = Input(
-            self.hazard,
-            self.exposure,
-            self.data,
-            self.impact_func_creator,
-            self.impact_to_dataframe,
-            mean_squared_error,
+            hazard=self.hazard,
+            exposure=self.exposure,
+            data=self.data,
+            impact_func_creator=self.impact_func_creator,
+            impact_to_dataframe=self.impact_to_dataframe,
+            cost_func=lambda x, y, w: mean_squared_error(x, y, sample_weight=w),
         )
 
     def test_single(self):
@@ -178,7 +176,7 @@ class TestBayesianOptimizer(unittest.TestCase):
             init_points=10, n_iter=20, max_iterations=1
         )
         optimizer = BayesianOptimizer(self.input, random_state=1)
-        output = optimizer.run(controller)
+        output = optimizer.run(controller=controller)
 
         # Check result (low accuracy)
         self.assertAlmostEqual(output.params["slope"], 1.0, places=2)
@@ -212,7 +210,7 @@ class TestBayesianOptimizer(unittest.TestCase):
         controller = BayesianOptimizerController.from_input(
             self.input, sampling_base=5, max_iterations=3
         )
-        output = optimizer.run(controller)
+        output = optimizer.run(controller=controller)
 
         # Check results (low accuracy)
         self.assertEqual(output.p_space.dim, 2)
@@ -248,7 +246,7 @@ class TestBayesianOptimizer(unittest.TestCase):
         controller = BayesianOptimizerController.from_input(
             self.input, max_iterations=1
         )
-        output = optimizer.run(controller)
+        output = optimizer.run(controller=controller)
 
         output_eval = OutputEvaluator(self.input, output)
         output_eval.impf_set.plot()
