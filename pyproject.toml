@@ -57,7 +57,11 @@ dependencies = [
     "tqdm",
     "xarray",
     "xlrd",
-    "xlsxwriter"
+    "xlsxwriter",
+    "ipython",
+    "networkx",
+    "scikit-network",
+    "sentence-transformers",
 ]
 
 [project.optional-dependencies]

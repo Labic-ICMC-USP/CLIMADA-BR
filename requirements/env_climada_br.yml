@@ -1,0 +1,19 @@
+name: climada_env
+
+channels:
+  - conda-forge
+  - nodefaults
+
+dependencies:
+  # CLIMADA-BR direct dependencies
+  - ipython
+  - networkx
+
+  # Graph neural network used by hazardRegularization.py
+  - scikit-network>=0.33,<0.34
+
+  # Text embeddings used by hazardRegularization.py
+  - sentence-transformers>=3.3,<4
+
+  # Explicitly use CPU PyTorch to avoid CUDA/NVIDIA dependencies
+  - pytorch-cpu
